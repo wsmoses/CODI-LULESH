@@ -2775,7 +2775,7 @@ int main(int argc, char *argv[])
 
       if ((opts.showProg != 0) && (opts.quiet == 0) && (myRank == 0)) {
          printf("cycle = %d, time = %e, dt=%e\n",
-                locDom->cycle(), double(locDom->time()), double(locDom->deltatime()) ) ;
+                locDom->cycle(), value(locDom->time()), value(locDom->deltatime()) ) ;
       }
    }
 
