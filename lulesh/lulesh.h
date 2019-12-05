@@ -1,3 +1,5 @@
+#pragma once
+
 #if !defined(USE_MPI)
 # error "You should specify USE_MPI=0 or USE_MPI=1 on the compile line"
 #endif
@@ -14,8 +16,10 @@
 #include <codi.hpp>
 #include <codi/externals/codiMediPackTypes.hpp>
 using namespace medi;
-#define TOOL CoDiPackTool<codi::RealReverse>
 
+#define TOOL CoDiPackTool<codi::RealReverse>
+#define adjoint 1
+using adtool=CoDiPackTool<codi::RealReverse>;
 using adreal=codi::RealReverse;
 
 /*
@@ -49,6 +53,23 @@ typedef adreal  Real_t ;  // floating point representation
 typedef int    Int_t ;   // integer representation
 
 enum { VolumeError = -1, QStopError = -2 } ;
+
+  namespace detail_mpi {
+    template <typename T> struct ForSpecialization {
+      static auto mpi_datatype() { return MPI_DOUBLE; }
+    };
+    template <> struct ForSpecialization<float> {
+      static auto mpi_datatype() { return MPI_FLOAT; }
+    };
+    template <typename Tape> struct ForSpecialization<codi::ActiveReal<Tape>> {
+      static auto mpi_datatype() {
+        return adtool::MPI_TYPE;
+      }
+    };
+  } /* namespace detail */
+  template <typename T> auto ampi_datatype() {
+    return detail_mpi::ForSpecialization<T>::mpi_datatype();
+  }
 
   namespace detail {
     template <typename T> struct ForSpecialization {

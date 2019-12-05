@@ -69,7 +69,7 @@ void CommRecv(Domain& domain, int msgType, Index_t xferFields,
    Index_t pmsg = 0 ; /* plane comm msg */
    Index_t emsg = 0 ; /* edge comm msg */
    Index_t cmsg = 0 ; /* corner comm msg */
-   MPI_Datatype baseType = ((sizeof(Real_t) == 4) ? MPI_FLOAT : MPI_DOUBLE) ;
+   auto baseType = ampi_datatype<Real_t>();//((sizeof(Real_t) == 4) ? MPI_FLOAT : MPI_DOUBLE) ;
    bool rowMin, rowMax, colMin, colMax, planeMin, planeMax ;
 
    /* assume communication to 6 neighbors by default */
@@ -369,7 +369,8 @@ void CommSend(Domain& domain, int msgType,
    Index_t pmsg = 0 ; /* plane comm msg */
    Index_t emsg = 0 ; /* edge comm msg */
    Index_t cmsg = 0 ; /* corner comm msg */
-   MPI_Datatype baseType = ((sizeof(Real_t) == 4) ? MPI_FLOAT : MPI_DOUBLE) ;
+   //MPI_Datatype baseType = ((sizeof(Real_t) == 4) ? MPI_FLOAT : MPI_DOUBLE) ;
+   auto baseType = ampi_datatype<Real_t>();//((sizeof(Real_t) == 4) ? MPI_FLOAT :
    MPI_Status status[26] ;
    Real_t *destAddr ;
    bool rowMin, rowMax, colMin, colMax, planeMin, planeMax ;
