@@ -2698,6 +2698,7 @@ int main(int argc, char *argv[])
    Domain_member fieldData ;
 
    AMPI_Init(&argc, &argv) ;
+   adtool::init();
    AMPI_Comm_size(AMPI_COMM_WORLD, &numRanks) ;
    AMPI_Comm_rank(AMPI_COMM_WORLD, &myRank) ;
 #else
@@ -2807,6 +2808,7 @@ int main(int argc, char *argv[])
    }
 
 #if USE_MPI
+   adtool::finalize();
    AMPI_Finalize() ;
 #endif
 
