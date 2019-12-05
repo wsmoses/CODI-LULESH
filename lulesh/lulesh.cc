@@ -2734,7 +2734,12 @@ int main(int argc, char *argv[])
       lulesh_printf("To write an output file for VisIt, use -v\n");
       lulesh_printf("See help (-h) for more options\n\n");
    }
-
+   
+#ifdef adjoint
+   auto& tape = adreal::getGlobalTape();
+   tape.setActive();
+#endif
+   
    // Set up the mesh and decompose. Assumes regular cubes for now
    Int_t col, row, plane, side;
    InitMeshDecomp(numRanks, myRank, &col, &row, &plane, &side);
@@ -2780,7 +2785,17 @@ int main(int argc, char *argv[])
                 locDom->cycle(), value(locDom->time()), value(locDom->deltatime()) ) ;
       }
    }
-
+#ifdef adjoint
+  auto& ad_energy =locDom->e(0);
+  tape.registerOutput(ad_energy);
+  ad_energy.setGradient(1.0);
+  tape.setPassive();
+  tape.evaluate();
+  if(myRank == 0) {
+    lulesh_printf("Derivative of energy %f is %f\n", ad_energy, ad_energy.getGradient());
+    tape.printStatistics();
+  }
+#endif
    // Use reduced max elapsed time
    double elapsed_time;
 #if USE_MPI   
