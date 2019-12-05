@@ -664,6 +664,7 @@ void InitMeshDecomp(Int_t numRanks, Int_t myRank,
       exit(-1);
 #endif
    }
+#ifndef adjoint
    if (sizeof(Real_t) != 4 && sizeof(Real_t) != 8) {
       lulesh_printf("MPI operations only support float and double right now...\n");
 #if USE_MPI
@@ -672,6 +673,7 @@ void InitMeshDecomp(Int_t numRanks, Int_t myRank,
       exit(-1);
 #endif
    }
+#endif
    if (MAX_FIELDS_PER_MPI_COMM > CACHE_COHERENCE_PAD_REAL) {
       lulesh_printf("corner element comm buffers too small.  Fix code.\n") ;
 #if USE_MPI
