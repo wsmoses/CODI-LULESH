@@ -210,10 +210,11 @@ void TimeIncrement(Domain& domain)
          gnewdt = domain.dthydro() * Real_t(2.0) / Real_t(3.0) ;
       }
 
-#if USE_MPI      
-      MPI_Allreduce(&gnewdt, &newdt, 1,
-                    ((sizeof(Real_t) == 4) ? MPI_FLOAT : MPI_DOUBLE),
-                    MPI_MIN, MPI_COMM_WORLD) ;
+#if USE_MPI
+      auto baseType = ampi_datatype<Real_t>();   
+      AMPI_Allreduce(&gnewdt, &newdt, 1,
+                    baseType,
+                    AMPI_MIN, AMPI_COMM_WORLD) ;
 #else
       newdt = gnewdt;
 #endif
@@ -1061,7 +1062,7 @@ void CalcHourglassControlForElems(Domain& domain,
       /* Do a check for negative volumes */
       if ( domain.v(i) <= Real_t(0.0) ) {
 #if USE_MPI         
-         MPI_Abort(MPI_COMM_WORLD, VolumeError) ;
+         AMPI_Abort(AMPI_COMM_WORLD, VolumeError) ;
 #else
          exit(VolumeError);
 #endif
@@ -1111,7 +1112,7 @@ void CalcVolumeForceForElems(Domain& domain)
       for ( Index_t k=0 ; k<numElem ; ++k ) {
          if (determ[k] <= Real_t(0.0)) {
 #if USE_MPI            
-            MPI_Abort(MPI_COMM_WORLD, VolumeError) ;
+            AMPI_Abort(AMPI_COMM_WORLD, VolumeError) ;
 #else
             exit(VolumeError);
 #endif
@@ -1626,7 +1627,7 @@ void CalcLagrangeElements(Domain& domain, Real_t* vnew)
          if (vnew[k] <= Real_t(0.0))
         {
 #if USE_MPI           
-           MPI_Abort(MPI_COMM_WORLD, VolumeError) ;
+           AMPI_Abort(AMPI_COMM_WORLD, VolumeError) ;
 #else
            exit(VolumeError);
 #endif
@@ -2030,7 +2031,7 @@ void CalcQForElems(Domain& domain, Real_t vnew[])
 
       if(idx >= 0) {
 #if USE_MPI         
-         MPI_Abort(MPI_COMM_WORLD, QStopError) ;
+         AMPI_Abort(AMPI_COMM_WORLD, QStopError) ;
 #else
          exit(QStopError);
 #endif
@@ -2399,7 +2400,7 @@ void ApplyMaterialPropertiesForElems(Domain& domain, Real_t vnew[])
           }
           if (vc <= 0.) {
 #if USE_MPI             
-             MPI_Abort(MPI_COMM_WORLD, VolumeError) ;
+             AMPI_Abort(AMPI_COMM_WORLD, VolumeError) ;
 #else
              exit(VolumeError);
 #endif
@@ -2696,9 +2697,9 @@ int main(int argc, char *argv[])
 #if USE_MPI   
    Domain_member fieldData ;
 
-   MPI_Init(&argc, &argv) ;
-   MPI_Comm_size(MPI_COMM_WORLD, &numRanks) ;
-   MPI_Comm_rank(MPI_COMM_WORLD, &myRank) ;
+   AMPI_Init(&argc, &argv) ;
+   AMPI_Comm_size(AMPI_COMM_WORLD, &numRanks) ;
+   AMPI_Comm_rank(AMPI_COMM_WORLD, &myRank) ;
 #else
    numRanks = 1;
    myRank = 0;
@@ -2755,12 +2756,12 @@ int main(int argc, char *argv[])
    CommSBN(*locDom, 1, &fieldData) ;
 
    // End initialization
-   MPI_Barrier(MPI_COMM_WORLD);
+   AMPI_Barrier(AMPI_COMM_WORLD);
 #endif   
    
    // BEGIN timestep to solution */
 #if USE_MPI   
-   double start = MPI_Wtime();
+   double start = AMPI_Wtime();
 #else
    timeval start;
    gettimeofday(&start, NULL) ;
@@ -2782,7 +2783,7 @@ int main(int argc, char *argv[])
    // Use reduced max elapsed time
    double elapsed_time;
 #if USE_MPI   
-   elapsed_time = MPI_Wtime() - start;
+   elapsed_time = AMPI_Wtime() - start;
 #else
    timeval end;
    gettimeofday(&end, NULL) ;
@@ -2790,8 +2791,8 @@ int main(int argc, char *argv[])
 #endif
    double elapsed_timeG;
 #if USE_MPI   
-   MPI_Reduce(&elapsed_time, &elapsed_timeG, 1, MPI_DOUBLE,
-              MPI_MAX, 0, MPI_COMM_WORLD);
+   AMPI_Reduce(&elapsed_time, &elapsed_timeG, 1, AMPI_DOUBLE,
+              AMPI_MAX, 0, AMPI_COMM_WORLD);
 #else
    elapsed_timeG = elapsed_time;
 #endif
@@ -2806,7 +2807,7 @@ int main(int argc, char *argv[])
    }
 
 #if USE_MPI
-   MPI_Finalize() ;
+   AMPI_Finalize() ;
 #endif
 
    return 0 ;

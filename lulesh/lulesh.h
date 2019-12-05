@@ -473,8 +473,8 @@ class Domain {
    Real_t *commDataRecv ;
    
    // Maximum number of block neighbors 
-   MPI_Request recvRequest[26] ; // 6 faces + 12 edges + 8 corners 
-   MPI_Request sendRequest[26] ; // 6 faces + 12 edges + 8 corners 
+   AMPI_Request recvRequest[26] ; // 6 faces + 12 edges + 8 corners 
+   AMPI_Request sendRequest[26] ; // 6 faces + 12 edges + 8 corners 
 #endif
 
   private:
