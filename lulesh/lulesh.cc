@@ -31,19 +31,19 @@ DIFFERENCES BETWEEN THIS VERSION (2.x) AND EARLIER VERSIONS:
  -v              : Output viz file (requires compiling with -DVIZ_MESH
  -h              : This message
 
- printf("Usage: %s [opts]\n", execname);
-      printf(" where [opts] is one or more of:\n");
-      printf(" -q              : quiet mode - suppress all stdout\n");
-      printf(" -i <iterations> : number of cycles to run\n");
-      printf(" -s <size>       : length of cube mesh along side\n");
-      printf(" -r <numregions> : Number of distinct regions (def: 11)\n");
-      printf(" -b <balance>    : Load balance between regions of a domain (def: 1)\n");
-      printf(" -c <cost>       : Extra cost of more expensive regions (def: 1)\n");
-      printf(" -f <numfiles>   : Number of files to split viz dump into (def: (np+10)/9)\n");
-      printf(" -p              : Print out progress\n");
-      printf(" -v              : Output viz file (requires compiling with -DVIZ_MESH\n");
-      printf(" -h              : This message\n");
-      printf("\n\n");
+ lulesh_printf("Usage: %s [opts]\n", execname);
+      lulesh_printf(" where [opts] is one or more of:\n");
+      lulesh_printf(" -q              : quiet mode - suppress all stdout\n");
+      lulesh_printf(" -i <iterations> : number of cycles to run\n");
+      lulesh_printf(" -s <size>       : length of cube mesh along side\n");
+      lulesh_printf(" -r <numregions> : Number of distinct regions (def: 11)\n");
+      lulesh_printf(" -b <balance>    : Load balance between regions of a domain (def: 1)\n");
+      lulesh_printf(" -c <cost>       : Extra cost of more expensive regions (def: 1)\n");
+      lulesh_printf(" -f <numfiles>   : Number of files to split viz dump into (def: (np+10)/9)\n");
+      lulesh_printf(" -p              : Print out progress\n");
+      lulesh_printf(" -v              : Output viz file (requires compiling with -DVIZ_MESH\n");
+      lulesh_printf(" -h              : This message\n");
+      lulesh_printf("\n\n");
 
 *Notable changes in LULESH 2.0
 
@@ -1811,7 +1811,7 @@ void CalcMonotonicQRegionForElems(Domain &domain, Int_t r,
          case 0:         delvm = domain.delv_xi(domain.lxim(i)); break ;
          case XI_M_SYMM: delvm = domain.delv_xi(i) ;       break ;
          case XI_M_FREE: delvm = Real_t(0.0) ;      break ;
-         default:          fprintf(stderr, "Error in switch at %s line %d\n",
+         default:          flulesh_printf(stderr, "Error in switch at %s line %d\n",
                                    __FILE__, __LINE__);
             delvm = 0; /* ERROR - but quiets the compiler */
             break;
@@ -1821,7 +1821,7 @@ void CalcMonotonicQRegionForElems(Domain &domain, Int_t r,
          case 0:         delvp = domain.delv_xi(domain.lxip(i)) ; break ;
          case XI_P_SYMM: delvp = domain.delv_xi(i) ;       break ;
          case XI_P_FREE: delvp = Real_t(0.0) ;      break ;
-         default:          fprintf(stderr, "Error in switch at %s line %d\n",
+         default:          flulesh_printf(stderr, "Error in switch at %s line %d\n",
                                    __FILE__, __LINE__);
             delvp = 0; /* ERROR - but quiets the compiler */
             break;
@@ -1849,7 +1849,7 @@ void CalcMonotonicQRegionForElems(Domain &domain, Int_t r,
          case 0:          delvm = domain.delv_eta(domain.letam(i)) ; break ;
          case ETA_M_SYMM: delvm = domain.delv_eta(i) ;        break ;
          case ETA_M_FREE: delvm = Real_t(0.0) ;        break ;
-         default:          fprintf(stderr, "Error in switch at %s line %d\n",
+         default:          flulesh_printf(stderr, "Error in switch at %s line %d\n",
                                    __FILE__, __LINE__);
             delvm = 0; /* ERROR - but quiets the compiler */
             break;
@@ -1859,7 +1859,7 @@ void CalcMonotonicQRegionForElems(Domain &domain, Int_t r,
          case 0:          delvp = domain.delv_eta(domain.letap(i)) ; break ;
          case ETA_P_SYMM: delvp = domain.delv_eta(i) ;        break ;
          case ETA_P_FREE: delvp = Real_t(0.0) ;        break ;
-         default:          fprintf(stderr, "Error in switch at %s line %d\n",
+         default:          flulesh_printf(stderr, "Error in switch at %s line %d\n",
                                    __FILE__, __LINE__);
             delvp = 0; /* ERROR - but quiets the compiler */
             break;
@@ -1886,7 +1886,7 @@ void CalcMonotonicQRegionForElems(Domain &domain, Int_t r,
          case 0:           delvm = domain.delv_zeta(domain.lzetam(i)) ; break ;
          case ZETA_M_SYMM: delvm = domain.delv_zeta(i) ;         break ;
          case ZETA_M_FREE: delvm = Real_t(0.0) ;          break ;
-         default:          fprintf(stderr, "Error in switch at %s line %d\n",
+         default:          flulesh_printf(stderr, "Error in switch at %s line %d\n",
                                    __FILE__, __LINE__);
             delvm = 0; /* ERROR - but quiets the compiler */
             break;
@@ -1896,7 +1896,7 @@ void CalcMonotonicQRegionForElems(Domain &domain, Int_t r,
          case 0:           delvp = domain.delv_zeta(domain.lzetap(i)) ; break ;
          case ZETA_P_SYMM: delvp = domain.delv_zeta(i) ;         break ;
          case ZETA_P_FREE: delvp = Real_t(0.0) ;          break ;
-         default:          fprintf(stderr, "Error in switch at %s line %d\n",
+         default:          flulesh_printf(stderr, "Error in switch at %s line %d\n",
                                    __FILE__, __LINE__);
             delvp = 0; /* ERROR - but quiets the compiler */
             break;
@@ -2718,19 +2718,19 @@ int main(int argc, char *argv[])
    ParseCommandLineOptions(argc, argv, myRank, &opts);
 
    if ((myRank == 0) && (opts.quiet == 0)) {
-      printf("Running problem size %d^3 per domain until completion\n", opts.nx);
-      printf("Num processors: %d\n", numRanks);
+      lulesh_printf("Running problem size %d^3 per domain until completion\n", opts.nx);
+      lulesh_printf("Num processors: %d\n", numRanks);
 #if _OPENMP
-      printf("Num threads: %d\n", omp_get_max_threads());
+      lulesh_printf("Num threads: %d\n", omp_get_max_threads());
 #endif
-      printf("Total number of elements: %lld\n\n", (long long int)(numRanks*opts.nx*opts.nx*opts.nx));
-      printf("To run other sizes, use -s <integer>.\n");
-      printf("To run a fixed number of iterations, use -i <integer>.\n");
-      printf("To run a more or less balanced region set, use -b <integer>.\n");
-      printf("To change the relative costs of regions, use -c <integer>.\n");
-      printf("To print out progress, use -p\n");
-      printf("To write an output file for VisIt, use -v\n");
-      printf("See help (-h) for more options\n\n");
+      lulesh_printf("Total number of elements: %lld\n\n", (long long int)(numRanks*opts.nx*opts.nx*opts.nx));
+      lulesh_printf("To run other sizes, use -s <integer>.\n");
+      lulesh_printf("To run a fixed number of iterations, use -i <integer>.\n");
+      lulesh_printf("To run a more or less balanced region set, use -b <integer>.\n");
+      lulesh_printf("To change the relative costs of regions, use -c <integer>.\n");
+      lulesh_printf("To print out progress, use -p\n");
+      lulesh_printf("To write an output file for VisIt, use -v\n");
+      lulesh_printf("See help (-h) for more options\n\n");
    }
 
    // Set up the mesh and decompose. Assumes regular cubes for now
@@ -2774,7 +2774,7 @@ int main(int argc, char *argv[])
       LagrangeLeapFrog(*locDom) ;
 
       if ((opts.showProg != 0) && (opts.quiet == 0) && (myRank == 0)) {
-         printf("cycle = %d, time = %e, dt=%e\n",
+         lulesh_printf("cycle = %d, time = %e, dt=%e\n",
                 locDom->cycle(), value(locDom->time()), value(locDom->deltatime()) ) ;
       }
    }

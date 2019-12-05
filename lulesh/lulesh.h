@@ -72,7 +72,16 @@ enum { VolumeError = -1, QStopError = -2 } ;
     // Call printf with values of expanded "Args"
     printf(fmt_string, value(std::forward<Args>(args))...);
   }
-
+  template <typename... Args>
+  void flulesh_printf(FILE *stream, const char* fmt_string, Args&&... args) {
+    // Call printf with values of expanded "Args"
+    fprintf(stream, fmt_string, value(std::forward<Args>(args))...);
+  }
+  template <typename... Args>
+  void slulesh_printf(char* stream, const char* fmt_string, Args&&... args) {
+    // Call printf with values of expanded "Args"
+    sprintf(stream, fmt_string, value(std::forward<Args>(args))...);
+  }
 inline adreal  SQRT(adreal  arg) { return sqrt(arg) ; }
 inline real4  SQRT(real4  arg) { return sqrtf(arg) ; }
 inline real8  SQRT(real8  arg) { return sqrt(arg) ; }

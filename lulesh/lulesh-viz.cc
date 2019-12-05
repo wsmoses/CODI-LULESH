@@ -59,8 +59,8 @@ void DumpToVisit(Domain& domain, int numFiles, int myRank, int numRanks)
   DBfile *db;
 
 
-  sprintf(basename, "lulesh_plot_c%d", domain.cycle());
-  sprintf(subdirName, "data_%d", myRank);
+  slulesh_printf(basename, "lulesh_plot_c%d", domain.cycle());
+  slulesh_printf(subdirName, "data_%d", myRank);
 
 #if USE_MPI
 
@@ -80,7 +80,7 @@ void DumpToVisit(Domain& domain, int numFiles, int myRank, int numRanks)
   if (myiorank == 0) 
     strcpy(fileName, basename);
   else
-    sprintf(fileName, "%s.%03d", basename, myiorank);
+    slulesh_printf(fileName, "%s.%03d", basename, myiorank);
 
   db = (DBfile*)PMPIO_WaitForBaton(bat, fileName, subdirName);
 
@@ -106,7 +106,7 @@ void DumpToVisit(Domain& domain, int numFiles, int myRank, int numRanks)
      DumpMultiblockObjects(db, basename, numRanks);
   }
   else {
-     printf("Error writing out viz file - rank %d\n", myRank);
+     lulesh_printf("Error writing out viz file - rank %d\n", myRank);
   }
 
 #endif
@@ -252,7 +252,7 @@ DumpDomainToVisit(DBfile *db, Domain& domain, int myRank)
 
 
    if (ok != 0) {
-      printf("Error writing out viz file - rank %d\n", myRank);
+      lulesh_printf("Error writing out viz file - rank %d\n", myRank);
    }
 }
 
@@ -312,20 +312,20 @@ void
 
     //delete multivarObjs[i];
     if (iorank == 0) {
-      snprintf(multimeshObjs[i], 64, "/data_%d/mesh", i);
-      snprintf(multimatObjs[i], 64, "/data_%d/regions",i);
+      snlulesh_printf(multimeshObjs[i], 64, "/data_%d/mesh", i);
+      snlulesh_printf(multimatObjs[i], 64, "/data_%d/regions",i);
       for(int v=0 ; v<numvars ; ++v) {
-	snprintf(multivarObjs[v][i], 64, "/data_%d/%s", i, vars[v]);
+	snlulesh_printf(multivarObjs[v][i], 64, "/data_%d/%s", i, vars[v]);
       }
      
     }
     else {
-      snprintf(multimeshObjs[i], 64, "%s.%03d:/data_%d/mesh",
+      snlulesh_printf(multimeshObjs[i], 64, "%s.%03d:/data_%d/mesh",
                basename, iorank, i);
-      snprintf(multimatObjs[i], 64, "%s.%03d:/data_%d/regions", 
+      snlulesh_printf(multimatObjs[i], 64, "%s.%03d:/data_%d/regions", 
 	       basename, iorank, i);
       for(int v=0 ; v<numvars ; ++v) {
-         snprintf(multivarObjs[v][i], 64, "%s.%03d:/data_%d/%s", 
+         snlulesh_printf(multivarObjs[v][i], 64, "%s.%03d:/data_%d/%s", 
                   basename, iorank, i, vars[v]);
       }
     }
@@ -360,7 +360,7 @@ void
   delete [] varTypes;
 
   if (ok != 0) {
-    printf("Error writing out multiXXX objs to viz file - rank 0\n");
+    lulesh_printf("Error writing out multiXXX objs to viz file - rank 0\n");
   }
 }
 
@@ -424,7 +424,7 @@ LULESH_PMPIO_Close(void *file, void *udata)
 void DumpToVisit(Domain& domain, int numFiles, int myRank, int numRanks)
 {
    if (myRank == 0) {
-      printf("Must enable -DVIZ_MESH at compile time to call DumpDomain\n");
+      lulesh_printf("Must enable -DVIZ_MESH at compile time to call DumpDomain\n");
    }
 }
 
