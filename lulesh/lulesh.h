@@ -7,20 +7,10 @@
 
 // OpenMP will be compiled in if this flag is set to 1 AND the compiler beging
 // used supports it (i.e. the _OPENMP symbol is defined)
-#define USE_OMP 1
+#define USE_OMP 0
 
 #if USE_MPI
 #include <mpi.h>
-
-#include <medi/medi.hpp>
-#include <codi.hpp>
-#include <codi/externals/codiMediPackTypes.hpp>
-using namespace medi;
-
-#define TOOL CoDiPackTool<codi::RealReverse>
-#define adjoint 1
-using adtool=CoDiPackTool<codi::RealReverse>;
-using adreal=codi::RealReverse;
 
 /*
    define one of these three symbols:
@@ -32,6 +22,17 @@ using adreal=codi::RealReverse;
 
 #define SEDOV_SYNC_POS_VEL_EARLY 1
 #endif
+
+#include <codi.hpp>
+#include <medi/medi.hpp>
+#include <codi/externals/codiMediPackTypes.hpp>
+using namespace medi;
+
+#define TOOL CoDiPackTool<codi::RealReverse>
+#define adjoint 1
+
+using adtool=CoDiPackTool<codi::RealReverse>;
+using adreal=codi::RealReverse;
 
 #include <math.h>
 #include <vector>

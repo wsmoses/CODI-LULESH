@@ -2786,14 +2786,28 @@ int main(int argc, char *argv[])
       }
    }
 #ifdef adjoint
-  auto& ad_energy =locDom->e(0);
-  tape.registerOutput(ad_energy);
-  ad_energy.setGradient(1.0);
   tape.setPassive();
-  tape.evaluate();
   if(myRank == 0) {
-    lulesh_printf("Derivative of energy %f is %f\n", ad_energy, ad_energy.getGradient());
+    auto& ad_energy =locDom->e(0);
+    auto num = locDom->numElem();
+    for(int i = 0; i < num; ++i) {
+      tape.registerOutput(locDom->e(i));
+      locDom->e(i).setGradient(1.0);
+    }
+    //tape.registerOutput(ad_energy);
+    //ad_energy.setGradient(1.0);
+    //tape.setPassive();
+    tape.evaluate();
+    lulesh_printf("Derivative of energy %f is %f. num elems: %d\n", ad_energy, ad_energy.getGradient(), num);
+    for(int i = 0; i < num; ++i) {
+      if(locDom->e(i).getGradient() != 0.0){
+        lulesh_printf("Derivative of energy %f is %f\n", locDom->e(i), locDom->e(i).getGradient());
+        
+      }
+    }
     tape.printStatistics();
+  } else {
+    tape.evaluate();
   }
 #endif
    // Use reduced max elapsed time
