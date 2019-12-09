@@ -185,8 +185,6 @@ void Release(T **ptr)
    }
 }
 
-
-
 /******************************************/
 
 /* Work Routines */
@@ -2235,6 +2233,7 @@ static inline
 void EvalEOSForElems(Domain& domain, Real_t *vnewc,
                      Int_t numElemReg, Index_t *regElemList, Int_t rep)
 {
+  rep = 1;
    Real_t  e_cut = domain.e_cut() ;
    Real_t  p_cut = domain.p_cut() ;
    Real_t  ss4o3 = domain.ss4o3() ;
@@ -2815,6 +2814,10 @@ int main(int argc, char *argv[])
 //      tape.setActive();
       regADInput(locDom, ADField::p);
       regADInput(locDom, ADField::q);
+      auto numElemReg = locDom->numElem();
+      for (Index_t j=0; j<numElemReg; ++j) {
+          ad_ind.e.push_back(locDom->e(j).getGradientData());
+      }
       LagrangeLeapFrog(*locDom) ;
       regADOutput(locDom, ADField::e);
 
@@ -2827,10 +2830,10 @@ int main(int argc, char *argv[])
         loc_dom->e(j).setGradient(1.0);
         tape.evaluate();
         for (Index_t i=0; i<numElemReg; ++i) {
-          if(loc_dom->p(i).getGradient() != 0.0)
-            lulesh_printf("p grad_o %f %i\n", loc_dom->p(i).getGradient(), i);
-          if(loc_dom->q(j).getGradient() != 0.0)
-            lulesh_printf("q grad_o %f %i\n", loc_dom->q(i).getGradient(),i);
+          if(tape.getGradient(ad_ind.p[i]) != 0.0)
+            lulesh_printf("p grad_o %f %i\n", tape.getGradient(ad_ind.p[i]), i);
+          if(tape.getGradient(ad_ind.q[i])!= 0.0)
+            lulesh_printf("q grad_o %f %i\n", tape.getGradient(ad_ind.q[i]),i);
         }
         tape.clearAdjoints();
       }

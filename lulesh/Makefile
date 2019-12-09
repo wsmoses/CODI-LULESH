@@ -6,7 +6,7 @@ SHELL = /bin/sh
 LULESH_EXEC = lulesh2.0
 
 SERCXX = clang++ -DUSE_MPI=0
-MPICXX = OMPI_CXX=clang++ mpic++ -DUSE_MPI=1
+MPICXX = OMPI_CXX=clang++ mpic++ -DUSE_MPI=0
 CXX = $(MPICXX)
 
 TYPEART_RTPATH = ${TYPEART_PATH}/lib
@@ -25,7 +25,7 @@ SOURCES2.0 = \
 OBJECTS2.0 = $(SOURCES2.0:.cc=.o)
 
 #Below are reasonable default flags for a serial build w/o OpenMP
-CXXFLAGS = -g -I. -Wall -Wno-format-security -Wno-overloaded-virtual -I${MEDIPACK_DIR}/include -I${MEDIPACK_DIR}/src -I${CODIPACK_DIR}/include
+CXXFLAGS = -g -I. -Wall -Wno-format-security -Wno-overloaded-virtual -I${MEDIPACK_DIR}/include -I${MEDIPACK_DIR}/src -I${CODIPACK_DIR}/include -DLLVM_FORCE_ENABLE_STATS
 LDFLAGS = -g -O3
 
 PASSES=-load ${TYPEART_PATH}/lib/meminstfinderpass.so -load ${TYPEART_PATH}/lib/typeartpass.so

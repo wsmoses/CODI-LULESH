@@ -34,6 +34,14 @@ using namespace medi;
 using adtool=CoDiPackTool<codi::RealReverse>;
 using adreal=codi::RealReverse;
 
+struct global_indice {
+  std::vector<int> e;
+  std::vector<int> q;
+  std::vector<int> p;
+};
+
+static global_indice ad_ind;
+
 #include <math.h>
 #include <vector>
 
@@ -650,8 +658,11 @@ enum class ADField{
   e,q,p
 };
 #define ad_input(field)\
+  ad_ind.field.reserve(num);\
   for(int i = 0; i < num; ++i) {\
-    tape.registerInput(locDom->field(i)); }
+    tape.registerInput(locDom->field(i)); \
+    ad_ind.field.push_back(locDom->field(i).getGradientData());\
+  }
 inline void regADInput(Domain* locDom, ADField f){
 #ifdef adjoint
   auto& tape = adreal::getGlobalTape();
@@ -672,7 +683,8 @@ inline void regADInput(Domain* locDom, ADField f){
 
 #define ad_output(field)\
   for(int i = 0; i < num; ++i) {\
-    tape.registerOutput(locDom->field(i)); }
+    tape.registerOutput(locDom->field(i)); \
+  }
 inline void regADOutput(Domain* locDom, ADField f){
 #ifdef adjoint
   auto& tape = adreal::getGlobalTape();
