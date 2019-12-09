@@ -2230,7 +2230,7 @@ void CalcSoundSpeedForElems(Domain &domain,
 }
 
 /******************************************/
-
+// FIXME AD values are overwritten
 static inline
 void EvalEOSForElems(Domain& domain, Real_t *vnewc,
                      Int_t numElemReg, Index_t *regElemList, Int_t rep)
@@ -2311,11 +2311,22 @@ void EvalEOSForElems(Domain& domain, Real_t *vnewc,
             }
          }
 
+
 #pragma omp for nowait firstprivate(numElemReg)
          for (Index_t i = 0 ; i < numElemReg ; ++i) {
             work[i] = Real_t(0.) ; 
          }
       }
+//      auto& tape=adreal::getGlobalTape();
+//      tape.setActive();
+//      for (Index_t i=0; i<numElemReg; ++i) {
+//        tape.registerInput(p_new[i]);
+//        tape.registerInput(q_new[i]);
+//        tape.registerInput(p_old[i]);
+//        tape.registerInput(q_old[i]);
+//        tape.registerInput(e_old[i]);
+//      }
+
       CalcEnergyForElems(p_new, e_new, q_new, bvc, pbvc,
                          p_old, e_old,  q_old, compression, compHalfStep,
                          vnewc, work,  delvc, pmin,
@@ -2323,6 +2334,29 @@ void EvalEOSForElems(Domain& domain, Real_t *vnewc,
                          qq_old, ql_old, rho0, eosvmax,
                          numElemReg, regElemList);
    }
+//   auto& tape=adreal::getGlobalTape();
+//   for (Index_t i=0; i<numElemReg; ++i) {
+//           tape.registerOutput(e_new[i]);
+//   }
+
+//   tape.setPassive();
+//   for (Index_t j=0; j<numElemReg; ++j) {
+//     e_new[j].setGradient(1.0);
+//     tape.evaluate();
+//     for (Index_t i=0; i<numElemReg; ++i) {
+//       if(p_old[i].getGradient() != 0.0)
+//         lulesh_printf("p grad_o %f %i\n", p_old[i].getGradient(), i);
+//       if(q_old[i].getGradient() != 0.0)
+//              lulesh_printf("q grad_o %f %i\n", q_old[i].getGradient(),i);
+//       if(p_new[i].getGradient() != 0.0)
+//         lulesh_printf("p grad_n %f %i\n", p_new[i].getGradient(),i);
+//       if(q_new[i].getGradient() != 0.0)
+//              lulesh_printf("q grad_n %f %i\n", q_new[i].getGradient(),i);
+//       if(e_old[i].getGradient() != 0.0)
+//                   lulesh_printf("e grad_o %f %i\n", e_old[i].getGradient(),i);
+//     }
+//     tape.clearAdjoints();
+//   }
 
 #pragma omp parallel for firstprivate(numElemReg)
    for (Index_t i=0; i<numElemReg; ++i) {
@@ -2737,7 +2771,6 @@ int main(int argc, char *argv[])
    
 #ifdef adjoint
    auto& tape = adreal::getGlobalTape();
-   tape.setActive();
 #endif
    
    // Set up the mesh and decompose. Assumes regular cubes for now
@@ -2776,40 +2809,42 @@ int main(int argc, char *argv[])
 //   for(Int_t i = 0; i < locDom->numReg(); i++)
 //      std::cout << "region" << i + 1<< "size" << locDom->regElemSize(i) <<std::endl;
    while((locDom->time() < locDom->stoptime()) && (locDom->cycle() < opts.its)) {
-
+      tape.setActive();
       TimeIncrement(*locDom) ;
+      //tape.reset(true);
+//      tape.setActive();
+      regADInput(locDom, ADField::p);
+      regADInput(locDom, ADField::q);
       LagrangeLeapFrog(*locDom) ;
+      regADOutput(locDom, ADField::e);
 
+#ifdef adjoint
+  tape.setPassive();
+  if(myRank == 0) {
+      auto loc_dom = locDom;
+      auto numElemReg = locDom->numElem();
+      for (Index_t j=0; j<numElemReg; ++j) {
+        loc_dom->e(j).setGradient(1.0);
+        tape.evaluate();
+        for (Index_t i=0; i<numElemReg; ++i) {
+          if(loc_dom->p(i).getGradient() != 0.0)
+            lulesh_printf("p grad_o %f %i\n", loc_dom->p(i).getGradient(), i);
+          if(loc_dom->q(j).getGradient() != 0.0)
+            lulesh_printf("q grad_o %f %i\n", loc_dom->q(i).getGradient(),i);
+        }
+        tape.clearAdjoints();
+      }
+      tape.printStatistics();
+  } else {
+    tape.evaluate();
+  }
+  tape.reset();
+#endif
       if ((opts.showProg != 0) && (opts.quiet == 0) && (myRank == 0)) {
          lulesh_printf("cycle = %d, time = %e, dt=%e\n",
                 locDom->cycle(), value(locDom->time()), value(locDom->deltatime()) ) ;
       }
    }
-#ifdef adjoint
-  tape.setPassive();
-  if(myRank == 0) {
-    auto& ad_energy =locDom->e(0);
-    auto num = locDom->numElem();
-    for(int i = 0; i < num; ++i) {
-      tape.registerOutput(locDom->e(i));
-      locDom->e(i).setGradient(1.0);
-    }
-    //tape.registerOutput(ad_energy);
-    //ad_energy.setGradient(1.0);
-    //tape.setPassive();
-    tape.evaluate();
-    lulesh_printf("Derivative of energy %f is %f. num elems: %d\n", ad_energy, ad_energy.getGradient(), num);
-    for(int i = 0; i < num; ++i) {
-      if(locDom->e(i).getGradient() != 0.0){
-        lulesh_printf("Derivative of energy %f is %f\n", locDom->e(i), locDom->e(i).getGradient());
-        
-      }
-    }
-    tape.printStatistics();
-  } else {
-    tape.evaluate();
-  }
-#endif
    // Use reduced max elapsed time
    double elapsed_time;
 #if USE_MPI   

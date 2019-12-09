@@ -55,6 +55,7 @@ typedef int    Int_t ;   // integer representation
 
 enum { VolumeError = -1, QStopError = -2 } ;
 
+
   namespace detail_mpi {
     template <typename T> struct ForSpecialization {
       static auto mpi_datatype() { return MPI_DOUBLE; }
@@ -644,6 +645,51 @@ struct cmdLineOpts {
    Int_t balance; // -b
 };
 
+
+enum class ADField{
+  e,q,p
+};
+#define ad_input(field)\
+  for(int i = 0; i < num; ++i) {\
+    tape.registerInput(locDom->field(i)); }
+inline void regADInput(Domain* locDom, ADField f){
+#ifdef adjoint
+  auto& tape = adreal::getGlobalTape();
+    auto num = locDom->numElem();
+    switch(f) {
+    case ADField::e:
+      ad_input(e);
+      break;
+    case ADField::q:
+      ad_input(q);
+      break;
+    case ADField::p:
+      ad_input(p);
+      break;
+    }
+#endif
+}
+
+#define ad_output(field)\
+  for(int i = 0; i < num; ++i) {\
+    tape.registerOutput(locDom->field(i)); }
+inline void regADOutput(Domain* locDom, ADField f){
+#ifdef adjoint
+  auto& tape = adreal::getGlobalTape();
+    auto num = locDom->numElem();
+    switch(f) {
+    case ADField::e:
+      ad_output(e);
+      break;
+    case ADField::q:
+      ad_output(q);
+      break;
+    case ADField::p:
+      ad_output(p);
+      break;
+    }
+#endif
+}
 
 
 // Function Prototypes
