@@ -424,7 +424,7 @@ LULESH_PMPIO_Close(void *file, void *udata)
 void DumpToVisit(Domain& domain, int numFiles, int myRank, int numRanks)
 {
    if (myRank == 0) {
-      lulesh_printf("Must enable -DVIZ_MESH at compile time to call DumpDomain\n");
+      printf_oo("Must enable -DVIZ_MESH at compile time to call DumpDomain\n");
    }
 }
 

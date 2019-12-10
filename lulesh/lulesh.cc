@@ -31,19 +31,19 @@ DIFFERENCES BETWEEN THIS VERSION (2.x) AND EARLIER VERSIONS:
  -v              : Output viz file (requires compiling with -DVIZ_MESH
  -h              : This message
 
- lulesh_printf("Usage: %s [opts]\n", execname);
-      lulesh_printf(" where [opts] is one or more of:\n");
-      lulesh_printf(" -q              : quiet mode - suppress all stdout\n");
-      lulesh_printf(" -i <iterations> : number of cycles to run\n");
-      lulesh_printf(" -s <size>       : length of cube mesh along side\n");
-      lulesh_printf(" -r <numregions> : Number of distinct regions (def: 11)\n");
-      lulesh_printf(" -b <balance>    : Load balance between regions of a domain (def: 1)\n");
-      lulesh_printf(" -c <cost>       : Extra cost of more expensive regions (def: 1)\n");
-      lulesh_printf(" -f <numfiles>   : Number of files to split viz dump into (def: (np+10)/9)\n");
-      lulesh_printf(" -p              : Print out progress\n");
-      lulesh_printf(" -v              : Output viz file (requires compiling with -DVIZ_MESH\n");
-      lulesh_printf(" -h              : This message\n");
-      lulesh_printf("\n\n");
+ printf_oo("Usage: %s [opts]\n", execname);
+      printf_oo(" where [opts] is one or more of:\n");
+      printf_oo(" -q              : quiet mode - suppress all stdout\n");
+      printf_oo(" -i <iterations> : number of cycles to run\n");
+      printf_oo(" -s <size>       : length of cube mesh along side\n");
+      printf_oo(" -r <numregions> : Number of distinct regions (def: 11)\n");
+      printf_oo(" -b <balance>    : Load balance between regions of a domain (def: 1)\n");
+      printf_oo(" -c <cost>       : Extra cost of more expensive regions (def: 1)\n");
+      printf_oo(" -f <numfiles>   : Number of files to split viz dump into (def: (np+10)/9)\n");
+      printf_oo(" -p              : Print out progress\n");
+      printf_oo(" -v              : Output viz file (requires compiling with -DVIZ_MESH\n");
+      printf_oo(" -h              : This message\n");
+      printf_oo("\n\n");
 
 *Notable changes in LULESH 2.0
 
@@ -1810,7 +1810,7 @@ void CalcMonotonicQRegionForElems(Domain &domain, Int_t r,
          case 0:         delvm = domain.delv_xi(domain.lxim(i)); break ;
          case XI_M_SYMM: delvm = domain.delv_xi(i) ;       break ;
          case XI_M_FREE: delvm = Real_t(0.0) ;      break ;
-         default:          flulesh_printf(stderr, "Error in switch at %s line %d\n",
+         default:          fprintf_oo(stderr, "Error in switch at %s line %d\n",
                                    __FILE__, __LINE__);
             delvm = 0; /* ERROR - but quiets the compiler */
             break;
@@ -1820,7 +1820,7 @@ void CalcMonotonicQRegionForElems(Domain &domain, Int_t r,
          case 0:         delvp = domain.delv_xi(domain.lxip(i)) ; break ;
          case XI_P_SYMM: delvp = domain.delv_xi(i) ;       break ;
          case XI_P_FREE: delvp = Real_t(0.0) ;      break ;
-         default:          flulesh_printf(stderr, "Error in switch at %s line %d\n",
+         default:          fprintf_oo(stderr, "Error in switch at %s line %d\n",
                                    __FILE__, __LINE__);
             delvp = 0; /* ERROR - but quiets the compiler */
             break;
@@ -1848,7 +1848,7 @@ void CalcMonotonicQRegionForElems(Domain &domain, Int_t r,
          case 0:          delvm = domain.delv_eta(domain.letam(i)) ; break ;
          case ETA_M_SYMM: delvm = domain.delv_eta(i) ;        break ;
          case ETA_M_FREE: delvm = Real_t(0.0) ;        break ;
-         default:          flulesh_printf(stderr, "Error in switch at %s line %d\n",
+         default:          fprintf_oo(stderr, "Error in switch at %s line %d\n",
                                    __FILE__, __LINE__);
             delvm = 0; /* ERROR - but quiets the compiler */
             break;
@@ -1858,7 +1858,7 @@ void CalcMonotonicQRegionForElems(Domain &domain, Int_t r,
          case 0:          delvp = domain.delv_eta(domain.letap(i)) ; break ;
          case ETA_P_SYMM: delvp = domain.delv_eta(i) ;        break ;
          case ETA_P_FREE: delvp = Real_t(0.0) ;        break ;
-         default:          flulesh_printf(stderr, "Error in switch at %s line %d\n",
+         default:          fprintf_oo(stderr, "Error in switch at %s line %d\n",
                                    __FILE__, __LINE__);
             delvp = 0; /* ERROR - but quiets the compiler */
             break;
@@ -1885,7 +1885,7 @@ void CalcMonotonicQRegionForElems(Domain &domain, Int_t r,
          case 0:           delvm = domain.delv_zeta(domain.lzetam(i)) ; break ;
          case ZETA_M_SYMM: delvm = domain.delv_zeta(i) ;         break ;
          case ZETA_M_FREE: delvm = Real_t(0.0) ;          break ;
-         default:          flulesh_printf(stderr, "Error in switch at %s line %d\n",
+         default:          fprintf_oo(stderr, "Error in switch at %s line %d\n",
                                    __FILE__, __LINE__);
             delvm = 0; /* ERROR - but quiets the compiler */
             break;
@@ -1895,7 +1895,7 @@ void CalcMonotonicQRegionForElems(Domain &domain, Int_t r,
          case 0:           delvp = domain.delv_zeta(domain.lzetap(i)) ; break ;
          case ZETA_P_SYMM: delvp = domain.delv_zeta(i) ;         break ;
          case ZETA_P_FREE: delvp = Real_t(0.0) ;          break ;
-         default:          flulesh_printf(stderr, "Error in switch at %s line %d\n",
+         default:          fprintf_oo(stderr, "Error in switch at %s line %d\n",
                                    __FILE__, __LINE__);
             delvp = 0; /* ERROR - but quiets the compiler */
             break;
@@ -2228,12 +2228,10 @@ void CalcSoundSpeedForElems(Domain &domain,
 }
 
 /******************************************/
-// FIXME AD values are overwritten
 static inline
 void EvalEOSForElems(Domain& domain, Real_t *vnewc,
                      Int_t numElemReg, Index_t *regElemList, Int_t rep)
 {
-  rep = 1;
    Real_t  e_cut = domain.e_cut() ;
    Real_t  p_cut = domain.p_cut() ;
    Real_t  ss4o3 = domain.ss4o3() ;
@@ -2312,19 +2310,10 @@ void EvalEOSForElems(Domain& domain, Real_t *vnewc,
 
 
 #pragma omp for nowait firstprivate(numElemReg)
-         for (Index_t i = 0 ; i < numElemReg ; ++i) {
+      for (Index_t i = 0 ; i < numElemReg ; ++i) {
             work[i] = Real_t(0.) ; 
          }
       }
-//      auto& tape=adreal::getGlobalTape();
-//      tape.setActive();
-//      for (Index_t i=0; i<numElemReg; ++i) {
-//        tape.registerInput(p_new[i]);
-//        tape.registerInput(q_new[i]);
-//        tape.registerInput(p_old[i]);
-//        tape.registerInput(q_old[i]);
-//        tape.registerInput(e_old[i]);
-//      }
 
       CalcEnergyForElems(p_new, e_new, q_new, bvc, pbvc,
                          p_old, e_old,  q_old, compression, compHalfStep,
@@ -2333,29 +2322,6 @@ void EvalEOSForElems(Domain& domain, Real_t *vnewc,
                          qq_old, ql_old, rho0, eosvmax,
                          numElemReg, regElemList);
    }
-//   auto& tape=adreal::getGlobalTape();
-//   for (Index_t i=0; i<numElemReg; ++i) {
-//           tape.registerOutput(e_new[i]);
-//   }
-
-//   tape.setPassive();
-//   for (Index_t j=0; j<numElemReg; ++j) {
-//     e_new[j].setGradient(1.0);
-//     tape.evaluate();
-//     for (Index_t i=0; i<numElemReg; ++i) {
-//       if(p_old[i].getGradient() != 0.0)
-//         lulesh_printf("p grad_o %f %i\n", p_old[i].getGradient(), i);
-//       if(q_old[i].getGradient() != 0.0)
-//              lulesh_printf("q grad_o %f %i\n", q_old[i].getGradient(),i);
-//       if(p_new[i].getGradient() != 0.0)
-//         lulesh_printf("p grad_n %f %i\n", p_new[i].getGradient(),i);
-//       if(q_new[i].getGradient() != 0.0)
-//              lulesh_printf("q grad_n %f %i\n", q_new[i].getGradient(),i);
-//       if(e_old[i].getGradient() != 0.0)
-//                   lulesh_printf("e grad_o %f %i\n", e_old[i].getGradient(),i);
-//     }
-//     tape.clearAdjoints();
-//   }
 
 #pragma omp parallel for firstprivate(numElemReg)
    for (Index_t i=0; i<numElemReg; ++i) {
@@ -2731,7 +2697,7 @@ int main(int argc, char *argv[])
    Domain_member fieldData ;
 
    AMPI_Init(&argc, &argv) ;
-   adtool::init();
+   AD_MPI_start();
    AMPI_Comm_size(AMPI_COMM_WORLD, &numRanks) ;
    AMPI_Comm_rank(AMPI_COMM_WORLD, &myRank) ;
 #else
@@ -2753,24 +2719,20 @@ int main(int argc, char *argv[])
    ParseCommandLineOptions(argc, argv, myRank, &opts);
 
    if ((myRank == 0) && (opts.quiet == 0)) {
-      lulesh_printf("Running problem size %d^3 per domain until completion\n", opts.nx);
-      lulesh_printf("Num processors: %d\n", numRanks);
+      printf_oo("Running problem size %d^3 per domain until completion\n", opts.nx);
+      printf_oo("Num processors: %d\n", numRanks);
 #if _OPENMP
-      lulesh_printf("Num threads: %d\n", omp_get_max_threads());
+      printf_oo("Num threads: %d\n", omp_get_max_threads());
 #endif
-      lulesh_printf("Total number of elements: %lld\n\n", (long long int)(numRanks*opts.nx*opts.nx*opts.nx));
-      lulesh_printf("To run other sizes, use -s <integer>.\n");
-      lulesh_printf("To run a fixed number of iterations, use -i <integer>.\n");
-      lulesh_printf("To run a more or less balanced region set, use -b <integer>.\n");
-      lulesh_printf("To change the relative costs of regions, use -c <integer>.\n");
-      lulesh_printf("To print out progress, use -p\n");
-      lulesh_printf("To write an output file for VisIt, use -v\n");
-      lulesh_printf("See help (-h) for more options\n\n");
+      printf_oo("Total number of elements: %lld\n\n", (long long int)(numRanks*opts.nx*opts.nx*opts.nx));
+      printf_oo("To run other sizes, use -s <integer>.\n");
+      printf_oo("To run a fixed number of iterations, use -i <integer>.\n");
+      printf_oo("To run a more or less balanced region set, use -b <integer>.\n");
+      printf_oo("To change the relative costs of regions, use -c <integer>.\n");
+      printf_oo("To print out progress, use -p\n");
+      printf_oo("To write an output file for VisIt, use -v\n");
+      printf_oo("See help (-h) for more options\n\n");
    }
-   
-#ifdef adjoint
-   auto& tape = adreal::getGlobalTape();
-#endif
    
    // Set up the mesh and decompose. Assumes regular cubes for now
    Int_t col, row, plane, side;
@@ -2807,45 +2769,32 @@ int main(int argc, char *argv[])
 //debug to see region sizes
 //   for(Int_t i = 0; i < locDom->numReg(); i++)
 //      std::cout << "region" << i + 1<< "size" << locDom->regElemSize(i) <<std::endl;
-   while((locDom->time() < locDom->stoptime()) && (locDom->cycle() < opts.its)) {
-      tape.setActive();
-      TimeIncrement(*locDom) ;
-      //tape.reset(true);
-//      tape.setActive();
-      regADInput(locDom, ADField::p);
-      regADInput(locDom, ADField::q);
-      auto numElemReg = locDom->numElem();
-      for (Index_t j=0; j<numElemReg; ++j) {
-          ad_ind.e.push_back(locDom->e(j).getGradientData());
-      }
-      LagrangeLeapFrog(*locDom) ;
-      regADOutput(locDom, ADField::e);
 
-#ifdef adjoint
-  tape.setPassive();
-  if(myRank == 0) {
-      auto loc_dom = locDom;
+   while((locDom->time() < locDom->stoptime()) && (locDom->cycle() < opts.its)) {
+      TimeIncrement(*locDom) ;
+
+      AD_start();
       auto numElemReg = locDom->numElem();
-      for (Index_t j=0; j<numElemReg; ++j) {
-        loc_dom->e(j).setGradient(1.0);
-        tape.evaluate();
-        for (Index_t i=0; i<numElemReg; ++i) {
-          if(tape.getGradient(ad_ind.p[i]) != 0.0)
-            lulesh_printf("p grad_o %f %i\n", tape.getGradient(ad_ind.p[i]), i);
-          if(tape.getGradient(ad_ind.q[i])!= 0.0)
-            lulesh_printf("q grad_o %f %i\n", tape.getGradient(ad_ind.q[i]),i);
-        }
-        tape.clearAdjoints();
+//      for (Index_t i=0; i<numElemReg; ++i) {
+//        AD_indep(locDom->q(i),ADField::q);
+//      }
+
+      for (Index_t i=0; i<numElemReg; ++i) {
+        AD_indep(locDom->p(i),ADField::p);
       }
-      tape.printStatistics();
-  } else {
-    tape.evaluate();
-  }
-  tape.reset();
-#endif
+
+      LagrangeLeapFrog(*locDom);
+
+      if(myRank==0){
+        AD_dep(locDom->e(0), ADField::e);
+      }
+
+      AD_end();
+      AD_driver(locDom->e(0), (opts.showProg != 0));
+
       if ((opts.showProg != 0) && (opts.quiet == 0) && (myRank == 0)) {
-         lulesh_printf("cycle = %d, time = %e, dt=%e\n",
-                locDom->cycle(), value(locDom->time()), value(locDom->deltatime()) ) ;
+         printf_oo("cycle = %d, time = %e, dt=%e\n",
+                locDom->cycle(), locDom->time(), locDom->deltatime() ) ;
       }
    }
    // Use reduced max elapsed time
@@ -2875,7 +2824,7 @@ int main(int argc, char *argv[])
    }
 
 #if USE_MPI
-   adtool::finalize();
+   AD_MPI_end();
    AMPI_Finalize() ;
 #endif
 

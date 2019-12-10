@@ -293,7 +293,7 @@ Domain::SetupThreadSupportStructures()
     for (Index_t i=0; i < clSize; ++i) {
       Index_t clv = m_nodeElemCornerList[i] ;
       if ((clv < 0) || (clv > numElem()*8)) {
-	flulesh_printf(stderr,
+	fprintf_oo(stderr,
 		"AllocateNodeElemIndexes(): nodeElemCornerList entry out of range!\n");
 #if USE_MPI
 	AMPI_Abort(AMPI_COMM_WORLD, -1);
@@ -657,16 +657,16 @@ void InitMeshDecomp(Int_t numRanks, Int_t myRank,
    // Assume cube processor layout for now
    testProcs = Int_t(value(Real_t(cbrt(Real_t(numRanks))+0.5))) ;
    if (testProcs*testProcs*testProcs != numRanks) {
-      lulesh_printf("Num processors must be a cube of an integer (1, 8, 27, ...)\n") ;
+      printf_oo("Num processors must be a cube of an integer (1, 8, 27, ...)\n") ;
 #if USE_MPI
       AMPI_Abort(AMPI_COMM_WORLD, -1) ;
 #else
       exit(-1);
 #endif
    }
-#ifndef adjoint
+#ifndef ADJOINT_MODE
    if (sizeof(Real_t) != 4 && sizeof(Real_t) != 8) {
-      lulesh_printf("MPI operations only support float and double right now...\n");
+      printf_oo("MPI operations only support float and double right now...\n");
 #if USE_MPI
       AMPI_Abort(AMPI_COMM_WORLD, -1) ;
 #else
@@ -675,7 +675,7 @@ void InitMeshDecomp(Int_t numRanks, Int_t myRank,
    }
 #endif
    if (MAX_FIELDS_PER_MPI_COMM > CACHE_COHERENCE_PAD_REAL) {
-      lulesh_printf("corner element comm buffers too small.  Fix code.\n") ;
+      printf_oo("corner element comm buffers too small.  Fix code.\n") ;
 #if USE_MPI
       AMPI_Abort(AMPI_COMM_WORLD, -1) ;
 #else
@@ -689,7 +689,7 @@ void InitMeshDecomp(Int_t numRanks, Int_t myRank,
 
    // temporary test
    if (dx*dy*dz != numRanks) {
-      lulesh_printf("error -- must have as many domains as procs\n") ;
+      printf_oo("error -- must have as many domains as procs\n") ;
 #if USE_MPI
       AMPI_Abort(AMPI_COMM_WORLD, -1) ;
 #else

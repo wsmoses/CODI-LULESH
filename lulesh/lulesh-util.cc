@@ -29,26 +29,26 @@ static void PrintCommandLineOptions(char *execname, int myRank)
 {
    if (myRank == 0) {
 
-      lulesh_printf("Usage: %s [opts]\n", execname);
-      lulesh_printf(" where [opts] is one or more of:\n");
-      lulesh_printf(" -q              : quiet mode - suppress all stdout\n");
-      lulesh_printf(" -i <iterations> : number of cycles to run\n");
-      lulesh_printf(" -s <size>       : length of cube mesh along side\n");
-      lulesh_printf(" -r <numregions> : Number of distinct regions (def: 11)\n");
-      lulesh_printf(" -b <balance>    : Load balance between regions of a domain (def: 1)\n");
-      lulesh_printf(" -c <cost>       : Extra cost of more expensive regions (def: 1)\n");
-      lulesh_printf(" -f <numfiles>   : Number of files to split viz dump into (def: (np+10)/9)\n");
-      lulesh_printf(" -p              : Print out progress\n");
-      lulesh_printf(" -v              : Output viz file (requires compiling with -DVIZ_MESH\n");
-      lulesh_printf(" -h              : This message\n");
-      lulesh_printf("\n\n");
+      printf_oo("Usage: %s [opts]\n", execname);
+      printf_oo(" where [opts] is one or more of:\n");
+      printf_oo(" -q              : quiet mode - suppress all stdout\n");
+      printf_oo(" -i <iterations> : number of cycles to run\n");
+      printf_oo(" -s <size>       : length of cube mesh along side\n");
+      printf_oo(" -r <numregions> : Number of distinct regions (def: 11)\n");
+      printf_oo(" -b <balance>    : Load balance between regions of a domain (def: 1)\n");
+      printf_oo(" -c <cost>       : Extra cost of more expensive regions (def: 1)\n");
+      printf_oo(" -f <numfiles>   : Number of files to split viz dump into (def: (np+10)/9)\n");
+      printf_oo(" -p              : Print out progress\n");
+      printf_oo(" -v              : Output viz file (requires compiling with -DVIZ_MESH\n");
+      printf_oo(" -h              : This message\n");
+      printf_oo("\n\n");
    }
 }
 
 static void ParseError(const char *message, int myRank)
 {
    if (myRank == 0) {
-      lulesh_printf("%s\n", message);
+      printf_oo("%s\n", message);
 #if USE_MPI      
       AMPI_Abort(AMPI_COMM_WORLD, -1);
 #else
@@ -160,7 +160,7 @@ void ParseCommandLineOptions(int argc, char *argv[],
          else {
             char msg[80];
             PrintCommandLineOptions(argv[0], myRank);
-            slulesh_printf(msg, "ERROR: Unknown command line argument: %s\n", argv[i]);
+            sprintf_oo(msg, "ERROR: Unknown command line argument: %s\n", argv[i]);
             ParseError(msg, myRank);
          }
       }
@@ -181,11 +181,11 @@ void VerifyAndWriteFinalOutput(Real_t elapsed_time,
    Real_t grindTime2 = ((elapsed_time*1e6)/locDom.cycle())/(nx*nx*nx*numRanks);
 
    Index_t ElemId = 0;
-   lulesh_printf("Run completed:  \n");
-   lulesh_printf("   Problem size        =  %i \n",    nx);
-   lulesh_printf("   MPI tasks           =  %i \n",    numRanks);
-   lulesh_printf("   Iteration count     =  %i \n",    locDom.cycle());
-   lulesh_printf("   Final Origin Energy = %12.6e \n", locDom.e(ElemId));
+   printf_oo("Run completed:  \n");
+   printf_oo("   Problem size        =  %i \n",    nx);
+   printf_oo("   MPI tasks           =  %i \n",    numRanks);
+   printf_oo("   Iteration count     =  %i \n",    locDom.cycle());
+   printf_oo("   Final Origin Energy = %12.6e \n", locDom.e(ElemId));
 
    Real_t   MaxAbsDiff = Real_t(0.0);
    Real_t TotalAbsDiff = Real_t(0.0);
@@ -205,15 +205,15 @@ void VerifyAndWriteFinalOutput(Real_t elapsed_time,
    }
 
    // Quick symmetry check
-   lulesh_printf("   Testing Plane 0 of Energy Array on rank 0:\n");
-   lulesh_printf("        MaxAbsDiff   = %12.6e\n",   MaxAbsDiff   );
-   lulesh_printf("        TotalAbsDiff = %12.6e\n",   TotalAbsDiff );
-   lulesh_printf("        MaxRelDiff   = %12.6e\n\n", MaxRelDiff   );
+   printf_oo("   Testing Plane 0 of Energy Array on rank 0:\n");
+   printf_oo("        MaxAbsDiff   = %12.6e\n",   MaxAbsDiff   );
+   printf_oo("        TotalAbsDiff = %12.6e\n",   TotalAbsDiff );
+   printf_oo("        MaxRelDiff   = %12.6e\n\n", MaxRelDiff   );
 
    // Timing information
-   lulesh_printf("\nElapsed time         = %10.2f (s)\n", elapsed_time);
-   lulesh_printf("Grind time (us/z/c)  = %10.8g (per dom)  (%10.8g overall)\n", grindTime1, grindTime2);
-   lulesh_printf("FOM                  = %10.8g (z/s)\n\n", 1000.0/grindTime2); // zones per second
+   printf_oo("\nElapsed time         = %10.2f (s)\n", elapsed_time);
+   printf_oo("Grind time (us/z/c)  = %10.8g (per dom)  (%10.8g overall)\n", grindTime1, grindTime2);
+   printf_oo("FOM                  = %10.8g (z/s)\n\n", 1000.0/grindTime2); // zones per second
 
    return ;
 }

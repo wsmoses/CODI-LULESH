@@ -23,27 +23,10 @@
 #define SEDOV_SYNC_POS_VEL_EARLY 1
 #endif
 
-#include <codi.hpp>
-#include <medi/medi.hpp>
-#include <codi/externals/codiMediPackTypes.hpp>
-using namespace medi;
-
-#define TOOL CoDiPackTool<codi::RealReverse>
-#define adjoint 1
-
-using adtool=CoDiPackTool<codi::RealReverse>;
-using adreal=codi::RealReverse;
-
-struct global_indice {
-  std::vector<int> e;
-  std::vector<int> q;
-  std::vector<int> p;
-};
-
-static global_indice ad_ind;
-
 #include <math.h>
 #include <vector>
+
+#include "lulesh-ad.h"
 
 //**************************************************
 // Allow flexibility for arithmetic representations 
@@ -51,79 +34,17 @@ static global_indice ad_ind;
 
 #define MAX(a, b) ( ((a) > (b)) ? (a) : (b))
 
-
-// Precision specification
-typedef float        real4 ;
-typedef double       real8 ;
-typedef long double  real10 ;  // 10 bytes on x86
-
-typedef int    Index_t ; // array subscript and loop index
-typedef adreal  Real_t ;  // floating point representation
-typedef int    Int_t ;   // integer representation
-
 enum { VolumeError = -1, QStopError = -2 } ;
 
 
-  namespace detail_mpi {
-    template <typename T> struct ForSpecialization {
-      static auto mpi_datatype() { return MPI_DOUBLE; }
-    };
-    template <> struct ForSpecialization<float> {
-      static auto mpi_datatype() { return MPI_FLOAT; }
-    };
-    template <typename Tape> struct ForSpecialization<codi::ActiveReal<Tape>> {
-      static auto mpi_datatype() {
-        return adtool::MPI_TYPE;
-      }
-    };
-  } /* namespace detail */
-  template <typename T> auto ampi_datatype() {
-    return detail_mpi::ForSpecialization<T>::mpi_datatype();
-  }
-
-  namespace detail {
-    template <typename T> struct ForSpecialization {
-      static auto value(const T& v) { return v; }
-    };
-    template <typename Tape> struct ForSpecialization<codi::ActiveReal<Tape>> {
-      static auto value(const codi::ActiveReal<Tape>& v) {
-        return v.getValue();
-      }
-    };
-  } /* namespace detail */
-  template <typename T> auto value(const T& v) {
-    return detail::ForSpecialization<T>::value(v);
-  }
-  template <typename To, typename From> To recast(const From& v) {
-    return static_cast<To>(value<From>(v));
-  }
-
-  template <typename... Args>
-  void lulesh_printf(const char* fmt_string, Args&&... args) {
-    // Call printf with values of expanded "Args"
-    printf(fmt_string, value(std::forward<Args>(args))...);
-  }
-  template <typename... Args>
-  void flulesh_printf(FILE *stream, const char* fmt_string, Args&&... args) {
-    // Call printf with values of expanded "Args"
-    fprintf(stream, fmt_string, value(std::forward<Args>(args))...);
-  }
-  template <typename... Args>
-  void slulesh_printf(char* stream, const char* fmt_string, Args&&... args) {
-    // Call printf with values of expanded "Args"
-    sprintf(stream, fmt_string, value(std::forward<Args>(args))...);
-  }
-inline adreal  SQRT(adreal  arg) { return sqrt(arg) ; }
 inline real4  SQRT(real4  arg) { return sqrtf(arg) ; }
 inline real8  SQRT(real8  arg) { return sqrt(arg) ; }
 inline real10 SQRT(real10 arg) { return sqrtl(arg) ; }
 
-inline adreal  CBRT(adreal  arg) { return cbrt(arg) ; }
 inline real4  CBRT(real4  arg) { return cbrtf(arg) ; }
 inline real8  CBRT(real8  arg) { return cbrt(arg) ; }
 inline real10 CBRT(real10 arg) { return cbrtl(arg) ; }
 
-inline adreal  FABS(adreal  arg) { return abs(arg) ; }
 inline real4  FABS(real4  arg) { return fabsf(arg) ; }
 inline real8  FABS(real8  arg) { return fabs(arg) ; }
 inline real10 FABS(real10 arg) { return fabsl(arg) ; }
@@ -652,56 +573,6 @@ struct cmdLineOpts {
    Int_t cost; // -c
    Int_t balance; // -b
 };
-
-
-enum class ADField{
-  e,q,p
-};
-#define ad_input(field)\
-  ad_ind.field.reserve(num);\
-  for(int i = 0; i < num; ++i) {\
-    tape.registerInput(locDom->field(i)); \
-    ad_ind.field.push_back(locDom->field(i).getGradientData());\
-  }
-inline void regADInput(Domain* locDom, ADField f){
-#ifdef adjoint
-  auto& tape = adreal::getGlobalTape();
-    auto num = locDom->numElem();
-    switch(f) {
-    case ADField::e:
-      ad_input(e);
-      break;
-    case ADField::q:
-      ad_input(q);
-      break;
-    case ADField::p:
-      ad_input(p);
-      break;
-    }
-#endif
-}
-
-#define ad_output(field)\
-  for(int i = 0; i < num; ++i) {\
-    tape.registerOutput(locDom->field(i)); \
-  }
-inline void regADOutput(Domain* locDom, ADField f){
-#ifdef adjoint
-  auto& tape = adreal::getGlobalTape();
-    auto num = locDom->numElem();
-    switch(f) {
-    case ADField::e:
-      ad_output(e);
-      break;
-    case ADField::q:
-      ad_output(q);
-      break;
-    case ADField::p:
-      ad_output(p);
-      break;
-    }
-#endif
-}
 
 
 // Function Prototypes
