@@ -2791,6 +2791,7 @@ int main(int argc, char *argv[])
 
       AD_end();
       AD_driver(locDom->e(0), (opts.showProg != 0));
+      AD_reset();
 
       if ((opts.showProg != 0) && (opts.quiet == 0) && (myRank == 0)) {
          printf_oo("cycle = %d, time = %e, dt=%e\n",
