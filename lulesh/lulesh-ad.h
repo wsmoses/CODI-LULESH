@@ -14,10 +14,15 @@
 #include <codi.hpp>
 #include <medi/medi.hpp>
 #include <codi/externals/codiMediPackTypes.hpp>
+#include <codi/externals/codiMpiTypes.hpp>
+
 using namespace medi;
 
 using adtool = CoDiPackTool<codi::RealReverse>;
 using adreal = codi::RealReverse;
+using MeDiTypes = CoDiMpiTypes<codi::RealReverse>;
+
+extern MeDiTypes* medi_types;
 
 // Precision specification
 typedef float real4;
@@ -55,6 +60,7 @@ void AD_MPI_end();
 void AD_reset();
 void AD_clear_adjoints();
 void AD_driver(Real_t &v, bool print = false);
+void AD_print_stats();
 
 namespace detail_mpi {
 template<typename T> struct ForSpecialization {
@@ -69,7 +75,7 @@ template<> struct ForSpecialization<float> {
 };
 template<typename Tape> struct ForSpecialization<codi::ActiveReal<Tape>> {
   static auto mpi_datatype() {
-    return adtool::MPI_TYPE;
+    return medi_types->MPI_TYPE;
   }
 };
 } /* namespace detail */

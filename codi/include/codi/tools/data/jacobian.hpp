@@ -1,7 +1,7 @@
 /*
  * CoDiPack, a Code Differentiation Package
  *
- * Copyright (C) 2015-2019 Chair for Scientific Computing (SciComp), TU Kaiserslautern
+ * Copyright (C) 2015-2020 Chair for Scientific Computing (SciComp), TU Kaiserslautern
  * Homepage: http://www.scicomp.uni-kl.de
  * Contact:  Prof. Nicolas R. Gauger (codi@scicomp.uni-kl.de)
  *
@@ -23,7 +23,11 @@
  * General Public License along with CoDiPack.
  * If not, see <http://www.gnu.org/licenses/>.
  *
- * Authors: Max Sagebaum, Tim Albring, (SciComp, TU Kaiserslautern)
+ * Authors:
+ *  - SciComp, TU Kaiserslautern:
+ *     Max Sagebaum
+ *     Tim Albring
+ *     Johannes Blühdorn
  */
 
 #pragma once
@@ -174,6 +178,23 @@ namespace codi {
       }
 
       /**
+       * @brief Change the size of the Jacobian to the new input and output values.
+       *
+       * Keeps  the size of the internal value vector if new shape is smaller than the old one.
+       *
+       * @param[in] m  Number of function outputs
+       * @param[in] n  Number of function inputs
+       */
+      CODI_INLINE void reshape(size_t const m, size_t const n) {
+        if(values.size() < m * n) {
+          this->resize(m, n);
+        } else {
+          this->m = m;
+          this->n = n;
+        }
+      }
+
+      /**
        * @brief The number of entries of the Jacobian.
        *
        * @return The size of the Jacobian.
@@ -295,6 +316,13 @@ namespace codi {
         nonZerosRow.resize(m);
       }
 
+      /** \copydoc Jacobian::reshape */
+      CODI_INLINE void reshape(size_t const m, size_t const n) {
+        Jacobian<Vec>::reshape(m, n);
+        if(nonZerosRow.size() < m) {
+          nonZerosRow.resize(m);
+        }
+      }
       /**
        * @brief Reference to the number of non zero entries for the specified row.
        *
@@ -316,8 +344,8 @@ namespace codi {
       CODI_INLINE void setLogic(const size_t i, const size_t j, T const& v) {
         if(T() != v) {
           nonZerosRow[i] += 1;
-          Jacobian<Vec>::operator ()(i,j) = v;
         }
+        Jacobian<Vec>::operator ()(i,j) = v;
       }
   };
 

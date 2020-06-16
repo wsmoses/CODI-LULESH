@@ -163,6 +163,25 @@ Additional BSD Notice
 #include "lulesh.h"
 
 
+void ta_print_loc(const void *call_adr) {
+    const char *exe = getenv("TA_EXE_TARGET");
+    if (exe == NULL || exe[0] == '\0') {
+        return;
+    }
+
+    char cmd_buf[512] = {0};
+    snprintf(cmd_buf, sizeof(cmd_buf), "addr2line -e %s -f %p", exe, call_adr);
+
+    FILE *fp = popen(cmd_buf, "r");
+    if (fp) {
+        char read_buf[512] = {0};
+        while (fgets(read_buf, sizeof(read_buf), fp)) {
+            printf("    %s", read_buf);
+        }
+    }
+    pclose(fp);
+}
+
 /*********************************/
 /* Data structure implementation */
 /*********************************/
@@ -170,10 +189,17 @@ Additional BSD Notice
 /* might want to add access methods so that memory can be */
 /* better managed, as in luleshFT */
 
-template <typename T>
-T *Allocate(size_t size)
-{
-   return static_cast<T *>(malloc(sizeof(T)*size)) ;
+template<typename T>
+T *Allocate(size_t size) {
+  // TA debug stuff
+ /*    if (size == 0) {
+        printf("we are zero\n");//, ret_adr);
+        return nullptr;
+        //const void* ret_adr = __builtin_return_address(0);
+        //ta_print_loc(ret_adr);
+
+    }*/
+    return static_cast<T *>(malloc(sizeof(T) * size));
 }
 
 template <typename T>
@@ -188,49 +214,50 @@ void Release(T **ptr)
 /******************************************/
 
 /* Work Routines */
-
 static inline
 void TimeIncrement(Domain& domain)
 {
    Real_t targetdt = domain.stoptime() - domain.time() ;
 
    if ((domain.dtfixed() <= Real_t(0.0)) && (domain.cycle() != Int_t(0))) {
-      Real_t ratio ;
-      Real_t olddt = domain.deltatime() ;
+       Real_t ratio;
+       Real_t olddt = domain.deltatime();
 
-      /* This will require a reduction in parallel */
-      Real_t gnewdt = Real_t(1.0e+20) ;
-      Real_t newdt ;
-      if (domain.dtcourant() < gnewdt) {
-         gnewdt = domain.dtcourant() / Real_t(2.0) ;
-      }
-      if (domain.dthydro() < gnewdt) {
-         gnewdt = domain.dthydro() * Real_t(2.0) / Real_t(3.0) ;
-      }
+       /* This will require a reduction in parallel */
+       Real_t gnewdt = Real_t(1.0e+20);
+       Real_t newdt;
+       if (domain.dtcourant() < gnewdt) {
+           gnewdt = domain.dtcourant() / Real_t(2.0);
+       }
+       if (domain.dthydro() < gnewdt) {
+           gnewdt = domain.dthydro() * Real_t(2.0) / Real_t(3.0);
+       }
 
 #if USE_MPI
-      auto baseType = ampi_datatype<Real_t>();   
-      AMPI_Allreduce(&gnewdt, &newdt, 1,
-                    baseType,
-                    AMPI_MIN, AMPI_COMM_WORLD) ;
+       auto baseType = ampi_datatype<Real_t>();
+       // this is added for typeart (errorneous filter workaround)
+       //if(gnewdt.value()<0.0)
+       //  printf("%i",1, &gnewdt);
+       AMPI_Allreduce(&gnewdt, &newdt, 1,
+                     baseType,
+                     AMPI_MIN, AMPI_COMM_WORLD) ;
 #else
-      newdt = gnewdt;
+       newdt = gnewdt;
 #endif
-      
-      ratio = newdt / olddt ;
-      if (ratio >= Real_t(1.0)) {
-         if (ratio < domain.deltatimemultlb()) {
-            newdt = olddt ;
-         }
-         else if (ratio > domain.deltatimemultub()) {
-            newdt = olddt*domain.deltatimemultub() ;
-         }
-      }
 
-      if (newdt > domain.dtmax()) {
-         newdt = domain.dtmax() ;
-      }
-      domain.deltatime() = newdt ;
+       ratio = newdt / olddt;
+       if (ratio >= Real_t(1.0)) {
+           if (ratio < domain.deltatimemultlb()) {
+               newdt = olddt;
+           } else if (ratio > domain.deltatimemultub()) {
+               newdt = olddt * domain.deltatimemultub();
+           }
+       }
+
+       if (newdt > domain.dtmax()) {
+           newdt = domain.dtmax();
+       }
+       domain.deltatime() = newdt;
    }
 
    /* TRY TO PREVENT VERY SMALL SCALING ON THE NEXT CYCLE */
@@ -2229,71 +2256,70 @@ void CalcSoundSpeedForElems(Domain &domain,
 
 /******************************************/
 static inline
-void EvalEOSForElems(Domain& domain, Real_t *vnewc,
-                     Int_t numElemReg, Index_t *regElemList, Int_t rep)
-{
-   Real_t  e_cut = domain.e_cut() ;
-   Real_t  p_cut = domain.p_cut() ;
-   Real_t  ss4o3 = domain.ss4o3() ;
-   Real_t  q_cut = domain.q_cut() ;
+void EvalEOSForElems(Domain &domain, Real_t *vnewc,
+                     Int_t numElemReg, Index_t *regElemList, Int_t rep) {
+    Real_t e_cut = domain.e_cut();
+    Real_t p_cut = domain.p_cut();
+    Real_t ss4o3 = domain.ss4o3();
+    Real_t q_cut = domain.q_cut();
 
-   Real_t eosvmax = domain.eosvmax() ;
-   Real_t eosvmin = domain.eosvmin() ;
-   Real_t pmin    = domain.pmin() ;
-   Real_t emin    = domain.emin() ;
-   Real_t rho0    = domain.refdens() ;
+    Real_t eosvmax = domain.eosvmax();
+    Real_t eosvmin = domain.eosvmin();
+    Real_t pmin = domain.pmin();
+    Real_t emin = domain.emin();
+    Real_t rho0 = domain.refdens();
 
-   // These temporaries will be of different size for 
-   // each call (due to different sized region element
-   // lists)
-   Real_t *e_old = Allocate<Real_t>(numElemReg) ;
-   Real_t *delvc = Allocate<Real_t>(numElemReg) ;
-   Real_t *p_old = Allocate<Real_t>(numElemReg) ;
-   Real_t *q_old = Allocate<Real_t>(numElemReg) ;
-   Real_t *compression = Allocate<Real_t>(numElemReg) ;
-   Real_t *compHalfStep = Allocate<Real_t>(numElemReg) ;
-   Real_t *qq_old = Allocate<Real_t>(numElemReg) ;
-   Real_t *ql_old = Allocate<Real_t>(numElemReg) ;
-   Real_t *work = Allocate<Real_t>(numElemReg) ;
-   Real_t *p_new = Allocate<Real_t>(numElemReg) ;
-   Real_t *e_new = Allocate<Real_t>(numElemReg) ;
-   Real_t *q_new = Allocate<Real_t>(numElemReg) ;
-   Real_t *bvc = Allocate<Real_t>(numElemReg) ;
-   Real_t *pbvc = Allocate<Real_t>(numElemReg) ;
- 
-   //loop to add load imbalance based on region number 
-   for(Int_t j = 0; j < rep; j++) {
-      /* compress data, minimal set */
+    // These temporaries will be of different size for
+    // each call (due to different sized region element
+    // lists)
+    Real_t *e_old = Allocate<Real_t>(numElemReg);
+    Real_t *delvc = Allocate<Real_t>(numElemReg);
+    Real_t *p_old = Allocate<Real_t>(numElemReg);
+    Real_t *q_old = Allocate<Real_t>(numElemReg);
+    Real_t *compression = Allocate<Real_t>(numElemReg);
+    Real_t *compHalfStep = Allocate<Real_t>(numElemReg);
+    Real_t *qq_old = Allocate<Real_t>(numElemReg);
+    Real_t *ql_old = Allocate<Real_t>(numElemReg);
+    Real_t *work = Allocate<Real_t>(numElemReg);
+    Real_t *p_new = Allocate<Real_t>(numElemReg);
+    Real_t *e_new = Allocate<Real_t>(numElemReg);
+    Real_t *q_new = Allocate<Real_t>(numElemReg);
+    Real_t *bvc = Allocate<Real_t>(numElemReg);
+    Real_t *pbvc = Allocate<Real_t>(numElemReg);
+
+    //loop to add load imbalance based on region number
+    for (Int_t j = 0; j < rep; j++) {
+        /* compress data, minimal set */
 #pragma omp parallel
-      {
+        {
 #pragma omp for nowait firstprivate(numElemReg)
-         for (Index_t i=0; i<numElemReg; ++i) {
-            Index_t elem = regElemList[i];
-            e_old[i] = domain.e(elem) ;
-            delvc[i] = domain.delv(elem) ;
-            p_old[i] = domain.p(elem) ;
-            q_old[i] = domain.q(elem) ;
-            qq_old[i] = domain.qq(elem) ;
-            ql_old[i] = domain.ql(elem) ;
-         }
+            for (Index_t i = 0; i < numElemReg; ++i) {
+                Index_t elem = regElemList[i];
+                e_old[i] = domain.e(elem);
+                delvc[i] = domain.delv(elem);
+                p_old[i] = domain.p(elem);
+                q_old[i] = domain.q(elem);
+                qq_old[i] = domain.qq(elem);
+                ql_old[i] = domain.ql(elem);
+            }
 
 #pragma omp for firstprivate(numElemReg)
-         for (Index_t i = 0; i < numElemReg ; ++i) {
-            Index_t elem = regElemList[i];
-            Real_t vchalf ;
-            compression[i] = Real_t(1.) / vnewc[elem] - Real_t(1.);
-            vchalf = vnewc[elem] - delvc[i] * Real_t(.5);
-            compHalfStep[i] = Real_t(1.) / vchalf - Real_t(1.);
-         }
+            for (Index_t i = 0; i < numElemReg; ++i) {
+                Index_t elem = regElemList[i];
+                Real_t vchalf;
+                compression[i] = Real_t(1.) / vnewc[elem] - Real_t(1.);
+                vchalf = vnewc[elem] - delvc[i] * Real_t(.5);
+                compHalfStep[i] = Real_t(1.) / vchalf - Real_t(1.);
+            }
 
-      /* Check for v > eosvmax or v < eosvmin */
-         if ( eosvmin != Real_t(0.) ) {
+            /* Check for v > eosvmax or v < eosvmin */
+            if (eosvmin != Real_t(0.)) {
 #pragma omp for nowait firstprivate(numElemReg, eosvmin)
-            for(Index_t i=0 ; i<numElemReg ; ++i) {
-               Index_t elem = regElemList[i];
-               if (vnewc[elem] <= eosvmin) { /* impossible due to calling func? */
-                  compHalfStep[i] = compression[i] ;
-               }
+                for (Index_t i = 0; i < numElemReg; ++i) {
+                    Index_t elem = regElemList[i];
+                    if (vnewc[elem] <= eosvmin) { /* impossible due to calling func? */
+                        compHalfStep[i] = compression[i];
+                    }
             }
          }
          if ( eosvmax != Real_t(0.) ) {
@@ -2733,7 +2759,7 @@ int main(int argc, char *argv[])
       printf_oo("To write an output file for VisIt, use -v\n");
       printf_oo("See help (-h) for more options\n\n");
    }
-   
+
    // Set up the mesh and decompose. Assumes regular cubes for now
    Int_t col, row, plane, side;
    InitMeshDecomp(numRanks, myRank, &col, &row, &plane, &side);

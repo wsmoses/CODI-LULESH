@@ -48,21 +48,22 @@ provides an implementation of the medi::ADToolInterface from MeDiPack. For CoDiP
 #include <medi/medi.hpp>
 
 #include <codi.hpp>
-#include <codi/externals/codiMediPackTypes.hpp>
+#include <codi/externals/codiMpiTypes.hpp>
 
 using namespace medi;
 
-#define TOOL CoDiPackTool<codi::RealReverse>
+using MpiTypes = CoDiMpiTypes<codi::RealReverse>;
+MpiTypes* mpiTypes;
 
 int main(int nargs, char** args) {
   ...
   AMPI_Init(&nargs, &args);
 
-  TOOL::init();
+  mpiTypes = new MpiTypes();
   
   ...
   
-  TOOL::finalize();
+  delete mpiTypes;
 
   AMPI_Finalize();
 }
@@ -70,8 +71,8 @@ int main(int nargs, char** args) {
 #include <medi/medi.cpp>
 ~~~
 
-The `init()` call will create all the specifics for the AD tool. The MPI datatype is then initialized and can be used to
-send AD variables over the network. For a simple send/recv pair the code is:
+The constructor call `MpiTypes()` will create all the specifics for the AD tool. The MPI datatype is then initialized
+and can be used to send AD variables over the network. For a simple send/recv pair the code is:
 
 ~~~
   int rank;
@@ -85,9 +86,9 @@ send AD variables over the network. For a simple send/recv pair the code is:
   if( 0 == rank ) {
     tape.registerInput(a);
 
-    AMPI_Send(&a, 1, TOOL::MPI_TYPE, 1, 42, AMPI_COMM_WORLD);
+    AMPI_Send(&a, 1, mpiTypes->MPI_TYPE, 1, 42, AMPI_COMM_WORLD);
   } else {
-    AMPI_Recv(&a, 1, TOOL::MPI_TYPE, 0, 42, AMPI_COMM_WORLD, AMPI_STATUS_IGNORE);
+    AMPI_Recv(&a, 1, mpiTypes->MPI_TYPE, 0, 42, AMPI_COMM_WORLD, AMPI_STATUS_IGNORE);
 
     tape.registerOutput(a);
 
@@ -104,7 +105,7 @@ send AD variables over the network. For a simple send/recv pair the code is:
 ~~~
 
 For all MPI functions and variables the AMPI replacements are used. Otherwise the only other change is the use of the
-MPI data type provided by the AD tool. `TOOL::MPI_TYPE` provides all information for MeDiPack such that the special handling
+MPI data type provided by the AD tool. `mpiTypes->MPI_TYPE` provides all information for MeDiPack such that the special handling
 for AD can be executed.
 
 ### Additional remarks
@@ -144,18 +145,19 @@ The complete code for this tutorial is:
 #include <medi/medi.hpp>
 
 #include <codi.hpp>
-#include <externals/codiMediPackTypes.hpp>
+#include <codi/externals/codiMpiTypes.hpp>
 
 #include <iostream>
 
 using namespace medi;
 
-#define TOOL CoDiPackTool<codi::RealReverse>
+using MpiTypes = CoDiMpiTypes<codi::RealReverse>;
+MpiTypes* mpiTypes;
 
 int main(int nargs, char** args) {
   AMPI_Init(&nargs, &args);
 
-  TOOL::init();
+  mpiTypes = new MpiTypes();
 
   int rank;
   int size;
@@ -174,9 +176,9 @@ int main(int nargs, char** args) {
     if( 0 == rank ) {
       tape.registerInput(a);
 
-      AMPI_Send(&a, 1, TOOL::MPI_TYPE, 1, 42, AMPI_COMM_WORLD);
+      AMPI_Send(&a, 1, mpiTypes->MPI_TYPE, 1, 42, AMPI_COMM_WORLD);
     } else {
-      AMPI_Recv(&a, 1, TOOL::MPI_TYPE, 0, 42, AMPI_COMM_WORLD, AMPI_STATUS_IGNORE);
+      AMPI_Recv(&a, 1, mpiTypes->MPI_TYPE, 0, 42, AMPI_COMM_WORLD, AMPI_STATUS_IGNORE);
 
       tape.registerOutput(a);
 
@@ -192,7 +194,7 @@ int main(int nargs, char** args) {
     }
   }
 
-  TOOL::finalize();
+  delete mpiTypes;
 
   AMPI_Finalize();
 }

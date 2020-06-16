@@ -1,7 +1,7 @@
 /*
  * MeDiPack, a Message Differentiation Package
  *
- * Copyright (C) 2017-2019 Chair for Scientific Computing (SciComp), TU Kaiserslautern
+ * Copyright (C) 2017-2020 Chair for Scientific Computing (SciComp), TU Kaiserslautern
  * Homepage: http://www.scicomp.uni-kl.de
  * Contact:  Prof. Nicolas R. Gauger (codi@scicomp.uni-kl.de)
  *
@@ -44,7 +44,7 @@ int main(int nargs, char** args) {
   int world_size;
   medi::AMPI_Comm_size(AMPI_COMM_WORLD, &world_size);
 
-  TOOL::init();
+  TOOL = new TOOL_TYPE();
 
   int evalPoints = getEvalPointsCount();
   int inputs = getInputCount();
@@ -110,8 +110,11 @@ int main(int nargs, char** args) {
   delete [] y;
   delete [] x;
 
-  TOOL::finalize();
+  delete TOOL;
+
   medi::AMPI_Finalize();
 }
+
+TOOL_TYPE* TOOL;
 
 #include <medi/medi.cpp>

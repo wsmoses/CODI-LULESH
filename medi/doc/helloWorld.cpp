@@ -1,7 +1,7 @@
 /*
  * MeDiPack, a Message Differentiation Package
  *
- * Copyright (C) 2017-2019 Chair for Scientific Computing (SciComp), TU Kaiserslautern
+ * Copyright (C) 2017-2020 Chair for Scientific Computing (SciComp), TU Kaiserslautern
  * Homepage: http://www.scicomp.uni-kl.de
  * Contact:  Prof. Nicolas R. Gauger (codi@scicomp.uni-kl.de)
  *
@@ -25,21 +25,23 @@
  *
  * Authors: Max Sagebaum, Tim Albring (SciComp, TU Kaiserslautern)
  */
+
 #include <medi/medi.hpp>
 
 #include <codi.hpp>
-#include <codi/externals/codiMediPackTypes.hpp>
+#include <codi/externals/codiMpiTypes.hpp>
 
 #include <iostream>
 
 using namespace medi;
 
-#define TOOL CoDiPackTool<codi::RealReverse>
+using MpiTypes = CoDiMpiTypes<codi::RealReverse>;
+MpiTypes* mpiTypes;
 
 int main(int nargs, char** args) {
   AMPI_Init(&nargs, &args);
 
-  TOOL::init();
+  mpiTypes = new MpiTypes();
 
   int rank;
 
@@ -52,9 +54,9 @@ int main(int nargs, char** args) {
   if( 0 == rank ) {
     tape.registerInput(a);
 
-    AMPI_Send(&a, 1, TOOL::MPI_TYPE, 1, 42, AMPI_COMM_WORLD);
+    AMPI_Send(&a, 1, mpiTypes->MPI_TYPE, 1, 42, AMPI_COMM_WORLD);
   } else {
-    AMPI_Recv(&a, 1, TOOL::MPI_TYPE, 0, 42, AMPI_COMM_WORLD, AMPI_STATUS_IGNORE);
+    AMPI_Recv(&a, 1, mpiTypes->MPI_TYPE, 0, 42, AMPI_COMM_WORLD, AMPI_STATUS_IGNORE);
 
     tape.registerOutput(a);
 
@@ -69,7 +71,7 @@ int main(int nargs, char** args) {
     std::cout << "Adjoint of 'a' on rank 0 is: " << a.getGradient() << std::endl;
   }
 
-  TOOL::finalize();
+  delete mpiTypes;
 
   AMPI_Finalize();
 }

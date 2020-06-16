@@ -1,7 +1,7 @@
 /*
  * MeDiPack, a Message Differentiation Package
  *
- * Copyright (C) 2017-2019 Chair for Scientific Computing (SciComp), TU Kaiserslautern
+ * Copyright (C) 2017-2020 Chair for Scientific Computing (SciComp), TU Kaiserslautern
  * Homepage: http://www.scicomp.uni-kl.de
  * Contact:  Prof. Nicolas R. Gauger (codi@scicomp.uni-kl.de)
  *
@@ -25,16 +25,19 @@
  *
  * Authors: Max Sagebaum, Tim Albring (SciComp, TU Kaiserslautern)
  */
+
 #include <medi/medi.hpp>
 
 #include <codi.hpp>
-#include <codi/externals/codiMediPackTypes.hpp>
+#include <codi/externals/codiMpiTypes.hpp>
 
 #include <iostream>
 
 using namespace medi;
 
-#define TOOL CoDiPackTool<codi::RealReverse>
+using MpiTypes = CoDiMpiTypes<codi::RealReverse>;
+using MpiTool = MpiTypes::Tool;
+MpiTypes* mpiTypes;
 
 struct Residuals {
   codi::RealReverse l1;
@@ -53,7 +56,7 @@ void customOperator() {
   AMPI_Comm_rank(AMPI_COMM_WORLD, &rank);
 
   AMPI_Datatype residualMpiType;
-  AMPI_Type_create_contiguous(2, TOOL::MPI_TYPE, &residualMpiType);
+  AMPI_Type_create_contiguous(2, mpiTypes->MPI_TYPE, &residualMpiType);
   AMPI_Type_commit(&residualMpiType);
 
   AMPI_Op op;
@@ -90,8 +93,8 @@ void modifiedCustomOpp(Residuals* invec, Residuals* inoutvec, int* len, MPI_Data
 
   // Special treatment for CoDiPack for online dependency analysis. Take a look at the Tool implementation for CoDiPack.
   for(int i = 0; i < *len; ++i) {
-    TOOL::modifyDependency(invec[i].l1, inoutvec[i].l1);
-    TOOL::modifyDependency(invec[i].lMax, inoutvec[i].lMax);
+    MpiTool::modifyDependency(invec[i].l1, inoutvec[i].l1);
+    MpiTool::modifyDependency(invec[i].lMax, inoutvec[i].lMax);
   }
 
   for(int i = 0; i < *len; ++i) {
@@ -119,7 +122,7 @@ void optimizedCustomOperator() {
   AMPI_Comm_rank(AMPI_COMM_WORLD, &rank);
 
   AMPI_Datatype residualMpiType;
-  AMPI_Type_create_contiguous(2, TOOL::MPI_TYPE, &residualMpiType);
+  AMPI_Type_create_contiguous(2, mpiTypes->MPI_TYPE, &residualMpiType);
   AMPI_Type_commit(&residualMpiType);
 
   AMPI_Op op2;
@@ -167,7 +170,7 @@ int main(int nargs, char** args) {
     std::cout << "Please start the tutorial with two processes." << std::endl;
   } else {
 
-    TOOL::init();
+    mpiTypes = new MpiTypes();
     codi::RealReverse::TapeType& tape = codi::RealReverse::getGlobalTape();
 
     customOperator();
@@ -176,7 +179,7 @@ int main(int nargs, char** args) {
 
     optimizedCustomOperator();
 
-    TOOL::finalize();
+    delete mpiTypes;
   }
 
   AMPI_Finalize();

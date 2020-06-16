@@ -1,7 +1,7 @@
 /*
  * MeDiPack, a Message Differentiation Package
  *
- * Copyright (C) 2017-2019 Chair for Scientific Computing (SciComp), TU Kaiserslautern
+ * Copyright (C) 2017-2020 Chair for Scientific Computing (SciComp), TU Kaiserslautern
  * Homepage: http://www.scicomp.uni-kl.de
  * Contact:  Prof. Nicolas R. Gauger (codi@scicomp.uni-kl.de)
  *
@@ -26,18 +26,30 @@
  * Authors: Max Sagebaum, Tim Albring (SciComp, TU Kaiserslautern)
  */
 
-#pragma once
+#include <toolDefines.h>
 
-#include <codi.hpp>
-#include <medi/medi.hpp>
-#include <externals/codiForwardMediPackTypes.hpp>
+IN(10)
+OUT(10)
+POINTS(1) = {{{1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0}, {11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0}}};
+SEEDS(1) = {{{1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0}, {11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0}}};
 
-typedef CODI_TYPE NUMBER;
+void func(NUMBER* x, NUMBER* y) {
+  int world_rank;
+  medi::AMPI_Comm_rank(AMPI_COMM_WORLD, &world_rank);
+  int world_size;
+  medi::AMPI_Comm_size(AMPI_COMM_WORLD, &world_size);
 
-#ifndef VECTOR
-# define VECTOR 0
-#endif
+  medi::AMPI_Request request[10];
+  for(int i = 0; i < 10; ++i) {
+    if(world_rank == 0) {
+      medi::AMPI_Isend(&x[i], 1, mpiNumberType, 1, 42 + i, AMPI_COMM_WORLD, &request[i]);
+    } else {
+      medi::AMPI_Irecv(&y[i], 1, mpiNumberType, 0, 42 + i, AMPI_COMM_WORLD, &request[i]);
+    }
+  }
 
-#define TOOL CoDiPackForwardTool<NUMBER>
-
-#include "../globalDefines.h"
+  for(int i = 0; i < 10; ++i) {
+    medi::AMPI_Wait(&request[i], AMPI_STATUS_IGNORE);
+    medi::AMPI_Wait(&request[i], AMPI_STATUS_IGNORE);
+  }
+}

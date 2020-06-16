@@ -48,6 +48,9 @@ else
 	$(CXX) $(OBJECTS2.0) $(LDFLAGS) -lm -o $@
 endif
 
+medi: medi-main.cpp
+	$(CXX) $(CXXFLAGS) -O0 -o $@ $<
+
 clean:
 	/bin/rm -f *.o *.s *~ $(OBJECTS) $(LULESH_EXEC) types.yaml
 	/bin/rm -rf *.dSYM

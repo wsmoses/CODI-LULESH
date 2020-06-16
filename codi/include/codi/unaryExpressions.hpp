@@ -1,7 +1,7 @@
-﻿/*
+/*
  * CoDiPack, a Code Differentiation Package
  *
- * Copyright (C) 2015-2019 Chair for Scientific Computing (SciComp), TU Kaiserslautern
+ * Copyright (C) 2015-2020 Chair for Scientific Computing (SciComp), TU Kaiserslautern
  * Homepage: http://www.scicomp.uni-kl.de
  * Contact:  Prof. Nicolas R. Gauger (codi@scicomp.uni-kl.de)
  *
@@ -23,7 +23,11 @@
  * General Public License along with CoDiPack.
  * If not, see <http://www.gnu.org/licenses/>.
  *
- * Authors: Max Sagebaum, Tim Albring, (SciComp, TU Kaiserslautern)
+ * Authors:
+ *  - SciComp, TU Kaiserslautern:
+ *     Max Sagebaum
+ *     Tim Albring
+ *     Johannes Blühdorn
  */
 
 #pragma once
@@ -269,6 +273,9 @@ namespace codi {
        * @brief Expressions are temporary and therefore stored by value.
        */
       typedef const UnaryOp<RealType, A, Impl> StoreType;
+
+      /** @brief The maximum derivative order that the active type contains. */
+      static const size_t MaxDerivativeOrder = 1 + TypeTraits<Real>::MaxDerivativeOrder;
 
       /**
        * @brief Get the primal value of the origin of this type.

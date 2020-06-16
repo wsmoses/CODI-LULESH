@@ -1,7 +1,7 @@
 /*
  * MeDiPack, a Message Differentiation Package
  *
- * Copyright (C) 2017-2019 Chair for Scientific Computing (SciComp), TU Kaiserslautern
+ * Copyright (C) 2017-2020 Chair for Scientific Computing (SciComp), TU Kaiserslautern
  * Homepage: http://www.scicomp.uni-kl.de
  * Contact:  Prof. Nicolas R. Gauger (codi@scicomp.uni-kl.de)
  *
@@ -31,6 +31,7 @@
 #include "ampiMisc.h"
 
 #include "../../../generated/medi/ampiDefinitions.h"
+#include "../exceptions.hpp"
 
 /**
  * @brief Global namespace for MeDiPack - Message Differentiation Package
@@ -39,10 +40,18 @@ namespace medi {
 
   typedef void (*DeleteReverseData)(void* data);
 
+  struct AsyncHandle;
+
   struct AMPI_Request {
       MPI_Request request;
-      HandleBase* handle;
+      AsyncHandle* handle;
       ContinueFunction func;
+
+      // Required for init requests
+      // note that request activity tracking is only performed for persistent communication
+      ContinueFunction start;
+      ContinueFunction end;
+      bool isActive;
 
       // required for reverse communication that needs to create data
       void* reverseData;
@@ -52,6 +61,9 @@ namespace medi {
         request(MPI_REQUEST_NULL),
         handle(NULL),
         func(NULL),
+        start(NULL),
+        end(NULL),
+        isActive(false),
         reverseData(NULL),
         deleteDataFunc(NULL){}
 
@@ -77,44 +89,79 @@ namespace medi {
 
   extern const AMPI_Request AMPI_REQUEST_NULL;
 
+  struct AsyncAdjointHandle : public HandleBase {
+
+    struct WaitHandle* waitHandle;
+    AMPI_Request requestReverse;
+
+    AsyncAdjointHandle() :
+      HandleBase() {}
+  };
+
+  struct AsyncHandle : public HandleBase {
+
+    AsyncAdjointHandle* toolHandle;
+
+    AsyncHandle() :
+      HandleBase() {}
+  };
+
   inline void AMPI_Wait_b(HandleBase* handle, AdjointInterface* adjointInterface);
   inline void AMPI_Wait_d(HandleBase* handle, AdjointInterface* adjointInterface);
-  struct WaitHandle : HandleBase {
+  struct WaitHandle : public HandleBase {
       ReverseFunction finishFuncReverse;
       ForwardFunction finishFuncForward;
-      HandleBase* handle;
+      AsyncAdjointHandle* adjointHandle;
 
-      WaitHandle(ReverseFunction finishFuncReverse, ForwardFunction finishFuncForward, HandleBase* handle) :
+      WaitHandle(ReverseFunction finishFuncReverse, ForwardFunction finishFuncForward, AsyncAdjointHandle* handle) :
         finishFuncReverse(finishFuncReverse),
         finishFuncForward(finishFuncForward),
-        handle(handle) {
+        adjointHandle(handle) {
          this->funcReverse = (ReverseFunction)AMPI_Wait_b;
         this->funcForward = (ForwardFunction)AMPI_Wait_d;
         this->deleteType = ManualDeleteType::Wait;
-        this->handle->deleteType = ManualDeleteType::Async;
+
+
+        handle->deleteType = ManualDeleteType::Async;
+        handle->waitHandle = this;
       }
   };
 
   inline void AMPI_Wait_b(HandleBase* handle, AdjointInterface* adjointInterface) {
     WaitHandle* h = static_cast<WaitHandle*>(handle);
 
-    h->finishFuncReverse(h->handle, adjointInterface);
+    h->finishFuncReverse(h->adjointHandle, adjointInterface);
   }
 
   inline void AMPI_Wait_d(HandleBase* handle, AdjointInterface* adjointInterface) {
     WaitHandle* h = static_cast<WaitHandle*>(handle);
 
-    h->finishFuncForward(h->handle, adjointInterface);
+    h->finishFuncForward(h->adjointHandle, adjointInterface);
+  }
+
+  inline void performStartAction(AMPI_Request *request) {
+    if( nullptr != request->start   // indicates a persistent communication request
+        && !request->isActive) {    // only perform start action if the persistent communication request is not active
+      request->start(request->handle);
+      request->isActive = true;
+    }
   }
 
   inline void performReverseAction(AMPI_Request *request) {
-    if(nullptr != request->func) {
+    if( nullptr != request->func      // if there is a reverse action, proceed if
+        && (nullptr == request->start // either the request is not persistent
+            || request->isActive)) {  // or it is active
       request->func(request->handle);
 
       request->deleteReverseData();
     }
 
-    *request = AMPI_REQUEST_NULL;
+    if(nullptr == request->start) {
+      // Only reset if this is a non persistent request
+      *request = AMPI_REQUEST_NULL;
+    } else {
+      request->isActive = false;
+    }
   }
 
   inline MPI_Request* convertToMPI(AMPI_Request* array, int count) {
@@ -159,9 +206,47 @@ namespace medi {
 #endif
 
 #if MEDI_MPI_VERSION_1_0 <= MEDI_MPI_TARGET
+  inline int AMPI_Start(AMPI_Request* request) {
+
+    if(AMPI_REQUEST_NULL == *request) {
+      return 0;
+    }
+
+
+    performStartAction(request);
+
+    return MPI_Start(&request->request);
+  }
+#endif
+
+#if MEDI_MPI_VERSION_1_0 <= MEDI_MPI_TARGET
+  inline int AMPI_Startall(int count, AMPI_Request* array_of_requests) {
+    MPI_Request* array = convertToMPI(array_of_requests, count);
+
+    for(int i = 0; i < count; ++i) {
+      if(AMPI_REQUEST_NULL != array_of_requests[i]) {
+        performStartAction(&array_of_requests[i]);
+      }
+    }
+
+    int rStatus = MPI_Startall(count, array);
+
+    delete [] array;
+
+    return rStatus;
+  }
+#endif
+
+#if MEDI_MPI_VERSION_1_0 <= MEDI_MPI_TARGET
   inline int AMPI_Request_free(AMPI_Request *request) {
     if(AMPI_REQUEST_NULL == *request) {
       return 0;
+    }
+
+    if(nullptr != request->end && false == request->isActive) {
+      request->end(request->handle);
+    } else {
+      MEDI_EXCEPTION("Freeing a handle that is not finish with wait, waitall, etc..");
     }
 
     int rStatus = MPI_Request_free(&request->request);

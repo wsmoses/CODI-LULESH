@@ -1,7 +1,7 @@
 #
 # MeDiPack, a Message Differentiation Package
 #
-# Copyright (C) 2017-2019 Chair for Scientific Computing (SciComp), TU Kaiserslautern
+# Copyright (C) 2017-2020 Chair for Scientific Computing (SciComp), TU Kaiserslautern
 # Homepage: http://www.scicomp.uni-kl.de
 # Contact:  Prof. Nicolas R. Gauger (codi@scicomp.uni-kl.de)
 #
@@ -59,7 +59,7 @@ COMPILER ?= gnu
 ifeq ($(COMPILER), gnu)
   MPICXX ?= mpic++
   MPIRUN ?= mpiexec
-  MPIOUT ?= --output-filename $@
+  MPIOUT ?= --output-filename $@.dir
 endif
 ifeq ($(COMPILER), intel)
   MPICXX ?= mpiicpc -wd3802
@@ -77,7 +77,7 @@ all:
 .SECONDARY:
 
 # define general sets for tests
-BASIC_TESTS = $(wildcard $(TEST_DIR)/misc/Test**.cpp) $(wildcard $(TEST_DIR)/datatypes/Test**.cpp) $(wildcard $(TEST_DIR)/collective/Test**.cpp) $(wildcard $(TEST_DIR)/collective/inplace/Test**.cpp) $(wildcard $(TEST_DIR)/pointToPoint/Test**.cpp) $(wildcard $(TEST_DIR)/wait_test/Test**.cpp)
+BASIC_TESTS = $(wildcard $(TEST_DIR)/misc/Test**.cpp) $(wildcard $(TEST_DIR)/datatypes/Test**.cpp) $(wildcard $(TEST_DIR)/collective/Test**.cpp) $(wildcard $(TEST_DIR)/collective/inplace/Test**.cpp) $(wildcard $(TEST_DIR)/pointToPoint/Test**.cpp) $(wildcard $(TEST_DIR)/pointToPoint/init/Test**.cpp) $(wildcard $(TEST_DIR)/wait_test/Test**.cpp)
 FORWARD_TESTS = $(wildcard $(TEST_DIR)/forward/Test**.cpp)
 PRIMAL_TESTS = $(wildcard $(TEST_DIR)/primal/Test**.cpp)
 
@@ -156,29 +156,30 @@ $(eval $(value DRIVER_INST))
 # Driver for RealReverse with untyped interface
 DRIVER_NAME  := CoDiUntyped
 DRIVER_TESTS := $(BASIC_TESTS)
-DRIVER_SRC = $(DRIVER_DIR)/codiUntyped/codiDriver.cpp
-$(BUILD_DIR)/%_$(DRIVER_NAME)_bin : DRIVER_INC = -I$(CODI_DIR)/include -I$(CODI_DIR)/source -I$(DRIVER_DIR)/codiUntyped
+DRIVER_SRC = $(DRIVER_DIR)/codi/codiDriver.cpp
+$(BUILD_DIR)/%_$(DRIVER_NAME)_bin : DRIVER_INC = -I$(CODI_DIR)/include -I$(CODI_DIR)/source -I$(DRIVER_DIR)/codi -DUNTYPED -DCODI_TYPE=codi::RealReverse
+
 $(eval $(value DRIVER_INST))
 
 # Driver for RealForward
 DRIVER_NAME  := CoDiForward
 DRIVER_TESTS := $(FORWARD_TESTS)
-DRIVER_SRC = $(DRIVER_DIR)/codiForward/codiDriver.cpp
-$(BUILD_DIR)/%_$(DRIVER_NAME)_bin : DRIVER_INC = -I$(CODI_DIR)/include -I$(CODI_DIR)/source -I$(DRIVER_DIR)/codiForward -DCODI_TYPE=codi::RealForward
+DRIVER_SRC = $(DRIVER_DIR)/codi/codiForwardDriver.cpp
+$(BUILD_DIR)/%_$(DRIVER_NAME)_bin : DRIVER_INC = -I$(CODI_DIR)/include -I$(CODI_DIR)/source -I$(DRIVER_DIR)/codi -DCODI_TYPE=codi::RealForward
 $(eval $(value DRIVER_INST))
 
 # Driver for RealReverse with a forward tape evaluation
 DRIVER_NAME  := CoDiTapeForward
 DRIVER_TESTS := $(FORWARD_TESTS)
-DRIVER_SRC = $(DRIVER_DIR)/codiTapeForward/codiDriver.cpp
-$(BUILD_DIR)/%_$(DRIVER_NAME)_bin : DRIVER_INC = -I$(CODI_DIR)/include -I$(CODI_DIR)/source -I$(DRIVER_DIR)/codiTapeForward -DCODI_TYPE=codi::RealReverse
+DRIVER_SRC = $(DRIVER_DIR)/codi/codiDriver.cpp
+$(BUILD_DIR)/%_$(DRIVER_NAME)_bin : DRIVER_INC = -I$(CODI_DIR)/include -I$(CODI_DIR)/source -I$(DRIVER_DIR)/codi -DCODI_TYPE=codi::RealReverse -DFORWARD_TAPE
 $(eval $(value DRIVER_INST))
 
 # Driver for RealReverse with a primal tape evaluation
 DRIVER_NAME  := CoDiTapePrimal
 DRIVER_TESTS := $(PRIMAL_TESTS)
-DRIVER_SRC = $(DRIVER_DIR)/codiTapePrimal/codiDriver.cpp
-$(BUILD_DIR)/%_$(DRIVER_NAME)_bin : DRIVER_INC = -I$(CODI_DIR)/include -I$(CODI_DIR)/source -I$(DRIVER_DIR)/codiTapePrimal -DCODI_TYPE=codi::RealReversePrimal
+DRIVER_SRC = $(DRIVER_DIR)/codi/codiDriver.cpp
+$(BUILD_DIR)/%_$(DRIVER_NAME)_bin : DRIVER_INC = -I$(CODI_DIR)/include -I$(CODI_DIR)/source -I$(DRIVER_DIR)/codi -DCODI_TYPE=codi::RealReversePrimal -DPRIMAL_TAPE
 $(eval $(value DRIVER_INST))
 
 # Driver for 2nd order
@@ -188,36 +189,36 @@ DRIVER_SRC = $(DRIVER_DIR)/codi/codiDriver.cpp
 $(BUILD_DIR)/%_$(DRIVER_NAME)_bin : DRIVER_INC = -I$(CODI_DIR)/include -I$(CODI_DIR)/source -I$(DRIVER_DIR)/codi -DCODI_TYPE="codi::RealReverseGen<codi::RealForward>"
 $(eval $(value DRIVER_INST))
 
-# Driver for ADOL-c
-DRIVER_NAME  := ADOL-c
-DRIVER_TESTS := $(BASIC_TESTS)
-DRIVER_SRC = $(DRIVER_DIR)/adolc/adolcDriver.cpp
-$(BUILD_DIR)/%_$(DRIVER_NAME)_bin : DRIVER_INC = -I$(ADOLC_DIR)/include -L$(ADOLC_DIR)/lib64 -ladolc -I$(DRIVER_DIR)/adolc
-$(BUILD_DIR)/%_$(DRIVER_NAME)_bin : DRIVER_LIB = -L$(ADOLC_DIR)/lib64 -ladolc
-$(eval $(value DRIVER_INST))
-
-# Driver for ADOL-c forward mode
-DRIVER_NAME  := ADOL-cForward
-DRIVER_TESTS := $(FORWARD_TESTS)
-DRIVER_SRC = $(DRIVER_DIR)/adolcForward/adolcDriver.cpp
-$(BUILD_DIR)/%_$(DRIVER_NAME)_bin : DRIVER_INC = -I$(ADOLC_DIR)/include -L$(ADOLC_DIR)/lib64 -ladolc -I$(DRIVER_DIR)/adolcForward
-$(BUILD_DIR)/%_$(DRIVER_NAME)_bin : DRIVER_LIB = -L$(ADOLC_DIR)/lib64 -ladolc
-$(eval $(value DRIVER_INST))
-
-# Driver for ADOL-c primal mode
-DRIVER_NAME  := ADOL-cPrimal
-DRIVER_TESTS := $(PRIMAL_TESTS)
-DRIVER_SRC = $(DRIVER_DIR)/adolcPrimal/adolcDriver.cpp
-$(BUILD_DIR)/%_$(DRIVER_NAME)_bin : DRIVER_INC = -I$(ADOLC_DIR)/include -L$(ADOLC_DIR)/lib64 -ladolc -I$(DRIVER_DIR)/adolcPrimal
-$(BUILD_DIR)/%_$(DRIVER_NAME)_bin : DRIVER_LIB = -L$(ADOLC_DIR)/lib64 -ladolc
-$(eval $(value DRIVER_INST))
+## Driver for ADOL-c
+#DRIVER_NAME  := ADOL-c
+#DRIVER_TESTS := $(BASIC_TESTS)
+#DRIVER_SRC = $(DRIVER_DIR)/adolc/adolcDriver.cpp
+#$(BUILD_DIR)/%_$(DRIVER_NAME)_bin : DRIVER_INC = -I$(ADOLC_DIR)/include -L$(ADOLC_DIR)/lib64 -ladolc -I$(DRIVER_DIR)/adolc
+#$(BUILD_DIR)/%_$(DRIVER_NAME)_bin : DRIVER_LIB = -L$(ADOLC_DIR)/lib64 -ladolc
+#$(eval $(value DRIVER_INST))
+#
+## Driver for ADOL-c forward mode
+#DRIVER_NAME  := ADOL-cForward
+#DRIVER_TESTS := $(FORWARD_TESTS)
+#DRIVER_SRC = $(DRIVER_DIR)/adolcForward/adolcDriver.cpp
+#$(BUILD_DIR)/%_$(DRIVER_NAME)_bin : DRIVER_INC = -I$(ADOLC_DIR)/include -L$(ADOLC_DIR)/lib64 -ladolc -I$(DRIVER_DIR)/adolcForward
+#$(BUILD_DIR)/%_$(DRIVER_NAME)_bin : DRIVER_LIB = -L$(ADOLC_DIR)/lib64 -ladolc
+#$(eval $(value DRIVER_INST))
+#
+## Driver for ADOL-c primal mode
+#DRIVER_NAME  := ADOL-cPrimal
+#DRIVER_TESTS := $(PRIMAL_TESTS)
+#DRIVER_SRC = $(DRIVER_DIR)/adolcPrimal/adolcDriver.cpp
+#$(BUILD_DIR)/%_$(DRIVER_NAME)_bin : DRIVER_INC = -I$(ADOLC_DIR)/include -L$(ADOLC_DIR)/lib64 -ladolc -I$(DRIVER_DIR)/adolcPrimal
+#$(BUILD_DIR)/%_$(DRIVER_NAME)_bin : DRIVER_LIB = -L$(ADOLC_DIR)/lib64 -ladolc
+#$(eval $(value DRIVER_INST))
 
 # rules for generating the test files
 $(RESULT_DIR)/%.out : $(BUILD_DIR)/%_bin
 	@mkdir -p $(@D)
 	$(MPIRUN) -n 2 $(MPIOUT) $<
-	@cat $@.* > $@
-	@rm $@.*
+	@cat $@.dir/1/rank.*/stdout > $@
+	@rm -r $@.dir
 
 # rule for printing the results (dependencies are generated by the drivers)
 $(RESULT_DIR)/%.test:

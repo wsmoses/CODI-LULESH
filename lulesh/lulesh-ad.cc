@@ -13,6 +13,8 @@ static adreal::TapeType& tape = adreal::getGlobalTape();
 static std::unordered_map<ADField, std::vector<adreal::GradientData>> indep_indices;
 //static std::unordered_map<ADField, std::vector<adreal::GradientData>> dep_indices;
 
+MeDiTypes* medi_types = nullptr;
+
 void AD_start() {
   tape.setActive();
 }
@@ -44,7 +46,7 @@ void AD_MPI_start() {
   int init;
   AMPI_Initialized(&init);
   if(init){
-    adtool::init();
+    medi_types = new MeDiTypes();
   }
 #endif
 }
@@ -54,7 +56,8 @@ void AD_MPI_end() {
   int init;
   AMPI_Initialized(&init);
   if(init){
-    adtool::finalize();
+    delete medi_types;
+    medi_types = nullptr;
   }
 #endif
 }
@@ -88,6 +91,13 @@ void AD_driver(adreal &v, bool print) {
     tape.evaluate();
   }
 }
+
+void AD_print_stats() {
+  std::ostringstream out;
+  tape.printStatistics(out);
+  printf("%s\n", out.str().c_str());
+}
+
 #else
 void AD_start() {}
 void AD_end() {}
@@ -98,6 +108,8 @@ void AD_MPI_start() {}
 void AD_MPI_end() {}
 void AD_clear_adjoints() {}
 void AD_driver(Real_t&, bool) {}
+void AD_print_stats() {}
+void AD_keep(Real_t* v){}
 #endif
 
 #include <medi/medi.cpp>

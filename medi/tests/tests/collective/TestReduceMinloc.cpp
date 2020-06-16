@@ -1,7 +1,7 @@
 /*
  * MeDiPack, a Message Differentiation Package
  *
- * Copyright (C) 2017-2019 Chair for Scientific Computing (SciComp), TU Kaiserslautern
+ * Copyright (C) 2017-2020 Chair for Scientific Computing (SciComp), TU Kaiserslautern
  * Homepage: http://www.scicomp.uni-kl.de
  * Contact:  Prof. Nicolas R. Gauger (codi@scicomp.uni-kl.de)
  *
@@ -52,7 +52,7 @@ void func(NUMBER* x, NUMBER* y) {
     xI[i].i = i + 1 + 100 * world_rank;
   }
 
-  medi::AMPI_Reduce(xI, yI, 10, TOOL::MPI_INT_TYPE, medi::AMPI_MINLOC, 0, MPI_COMM_WORLD);
+  medi::AMPI_Reduce(xI, yI, 10, mpiNumberIntType, medi::AMPI_MINLOC, 0, MPI_COMM_WORLD);
 
   if(world_rank == 0) {
     for(int i = 0; i < 10; ++i) {

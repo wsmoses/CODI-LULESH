@@ -1,7 +1,7 @@
 /*
  * CoDiPack, a Code Differentiation Package
  *
- * Copyright (C) 2015-2019 Chair for Scientific Computing (SciComp), TU Kaiserslautern
+ * Copyright (C) 2015-2020 Chair for Scientific Computing (SciComp), TU Kaiserslautern
  * Homepage: http://www.scicomp.uni-kl.de
  * Contact:  Prof. Nicolas R. Gauger (codi@scicomp.uni-kl.de)
  *
@@ -23,7 +23,11 @@
  * General Public License along with CoDiPack.
  * If not, see <http://www.gnu.org/licenses/>.
  *
- * Authors: Max Sagebaum, Tim Albring, (SciComp, TU Kaiserslautern)
+ * Authors:
+ *  - SciComp, TU Kaiserslautern:
+ *     Max Sagebaum
+ *     Tim Albring
+ *     Johannes Blühdorn
  */
 
 
@@ -313,8 +317,8 @@ namespace codi {
         Tape& tape = CoDiType::getGlobalTape();
 
         Position endPos = tape.getPosition();
-        if(jacobie.size() < inputData.size() * outputData.size()) {
-          jacobie.resize(outputData.size(), inputData.size());
+        if(jacobie.getM() != outputData.size() || jacobie.getN() != inputData.size()) {
+          jacobie.reshape(outputData.size(), inputData.size());
         }
 
         Algorithms<CoDiType, false>::computeJacobian(startPos, endPos,
@@ -352,7 +356,7 @@ namespace codi {
                   jacobiesForStatement -= 1;
                 }
               }
-              nonZerosLeft -= jacobiesForStatement; /* update non zeros so that we now if it is the last round */
+              nonZerosLeft -= jacobiesForStatement; /* update non zeros so that we know if it is the last round */
 
               GradientData storedGradientData = lastGradientData;
               tape.storeManual(value.getValue(), lastGradientData, jacobiesForStatement + (int)staggeringActive);
