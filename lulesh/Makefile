@@ -3,11 +3,21 @@
 SHELL = /bin/sh
 .SUFFIXES: .cc .o .ll
 
-LULESH_EXEC = lulesh2.0
+# ENZYME_PATH ?= /home/ubuntu/Enzyme/enzyme/build/Enzyme/ClangEnzyme-14.so
+# CLANG_PATH ?= /home/ubuntu/llvm-project/build/bin
+ENZYME_PATH ?= /home/wmoses/git/Enzyme/enzyme/build13D/Enzyme/ClangEnzyme-13.so
+CLANG_PATH ?= /mnt/sabrent/wmoses/llvm13/buildall/bin
 
-SERCXX = clang++ -DUSE_MPI=0
-MPICXX = OMPI_CXX=clang++ mpic++ -DUSE_MPI=1
-CXX = $(MPICXX)
+OPENMP_PATH ?= $(CLANG_PATH)/../projects/openmp/runtime/src
+MPI_PATH ?= /usr/lib/x86_64-linux-gnu/openmpi/include
+OPENMP_LIB ?= $(CLANG_PATH)/../lib/libomp.so
+
+MPI_INC = /opt/local/include/openmpi
+MPI_LIB = /opt/local/lib
+
+CXX = $(CLANG_PATH)/clang++ -DUSE_MPI=1
+
+LULESH_EXEC = lulesh2.0
 
 TYPEART_RTPATH = ${TYPEART_PATH}/lib
 LTYPEART_RT= -L$(TYPEART_RTPATH) -ltypeart-rt 
@@ -25,7 +35,7 @@ SOURCES2.0 = \
 OBJECTS2.0 = $(SOURCES2.0:.cc=.o)
 
 #Below are reasonable default flags for a serial build w/o OpenMP
-CXXFLAGS = -g -I. -Wall -Wno-format-security -Wno-overloaded-virtual -I${MEDIPACK_DIR}/include -I${MEDIPACK_DIR}/src -I${CODIPACK_DIR}/include
+CXXFLAGS = -g -I. -Wall -Wno-format-security -Wno-overloaded-virtual -I${MEDIPACK_DIR}/include -I${MEDIPACK_DIR}/src -I${CODIPACK_DIR}/include -I $(OPENMP_PATH) -I $(MPI_PATH) 
 LDFLAGS = -g -O3
 
 PASSES=-load ${TYPEART_PATH}/lib/meminstfinderpass.so -load ${TYPEART_PATH}/lib/typeartpass.so
@@ -43,9 +53,9 @@ all: $(LULESH_EXEC)
 lulesh2.0: $(OBJECTS2.0)
 	@echo "Linking" 
 ifeq ($(TYPEART), yes)
-	$(CXX) $(OBJECTS2.0) $(LDFLAGS) -lm $(LTYPEART_RT) -o $@
+	$(CXX) $(OBJECTS2.0) $(LDFLAGS) -lm $(LTYPEART_RT) -o $@ -lmpi
 else
-	$(CXX) $(OBJECTS2.0) $(LDFLAGS) -lm -o $@
+	$(CXX) $(OBJECTS2.0) $(LDFLAGS) -lm -o $@ -lmpi
 endif
 
 medi: medi-main.cpp
