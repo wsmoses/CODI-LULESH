@@ -238,9 +238,16 @@ void TimeIncrement(Domain& domain)
        // this is added for typeart (errorneous filter workaround)
        //if(gnewdt.value()<0.0)
        //  printf("%i",1, &gnewdt);
+#if ADJOINT_MODE == 1
        AMPI_Allreduce(&gnewdt, &newdt, 1,
                      baseType,
                      AMPI_MIN, AMPI_COMM_WORLD) ;
+#else
+       MPI_Allreduce(&gnewdt, &newdt, 1,
+                     baseType,
+                     AMPI_MIN.primalFunction, AMPI_COMM_WORLD) ;
+
+#endif
 #else
        newdt = gnewdt;
 #endif

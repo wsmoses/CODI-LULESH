@@ -22,6 +22,27 @@ using adtool = CoDiPackTool<codi::RealReverse>;
 using adreal = codi::RealReverse;
 using MeDiTypes = CoDiMpiTypes<codi::RealReverse>;
 
+#if ADJOINT_MODE
+#else
+/*
+template<typename DATATYPE>
+inline int AMPI_Allreduce(MEDI_OPTIONAL_CONST typename DATATYPE::Type* sendbuf, typename DATATYPE::Type* recvbuf, int count, DATATYPE* datatype, AMPI_Op op, AMPI_Comm comm){
+  MPI_Allreduce(sendbuf, recvbuf, count, datatype, op, comm);
+}*/
+//template<typename DATATYPE>
+//  int AMPI_Irecv(typename DATATYPE::Type* buf, int count, DATATYPE* datatype, int source, int tag, AMPI_Comm comm,
+//                 AMPI_Request* request) {
+static int AMPI_Irecv(void *buf, int count, MPI_Datatype datatype, int source,
+              int tag, AMPI_Comm comm, AMPI_Request * request){
+
+      return MPI_Irecv(buf, count, datatype, source, tag, comm, &request->request);
+}
+static int AMPI_Isend(const void *buf, int count, MPI_Datatype datatype, int dest, int tag,
+              MPI_Comm comm, AMPI_Request *request){
+      return MPI_Isend(buf, count, datatype, dest, tag, comm, &request->request);
+}
+#endif
+
 extern MeDiTypes* medi_types;
 
 // Precision specification
