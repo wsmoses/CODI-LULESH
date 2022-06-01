@@ -3,8 +3,8 @@
 SHELL = /bin/sh
 .SUFFIXES: .cc .o .ll
 
-ENZYME_PATH = /home/ubuntu/enzyme-sc22/Enzyme/enzyme/build/Enzyme/ClangEnzyme-15.so
-CLANG_PATH = /home/ubuntu/enzyme-sc22/llvm-project/build/bin
+ENZYME_PATH ?= /home/ubuntu/enzyme-sc22/Enzyme/enzyme/build/Enzyme/ClangEnzyme-15.so
+CLANG_PATH ?= /home/ubuntu/enzyme-sc22/llvm-project/build/bin
 #ENZYME_PATH ?= /home/wmoses/git/Enzyme/enzyme/build13D/Enzyme/ClangEnzyme-13.so
 #CLANG_PATH ?= /mnt/sabrent/wmoses/llvm13/buildall/bin
 
